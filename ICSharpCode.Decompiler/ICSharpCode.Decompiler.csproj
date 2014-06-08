@@ -46,11 +46,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Disassembler\ByteReader.cs" />
+    <Compile Include="Disassembler\CABlob.cs" />
+    <Compile Include="Disassembler\Disassembler.cs" />
+    <Compile Include="Disassembler\ExportedMethods.cs" />
+    <Compile Include="Disassembler\IL.cs" />
+    <Compile Include="Disassembler\Keywords.cs" />
+    <Compile Include="Disassembler\LineWriter.cs" />
+    <Compile Include="Disassembler\Util.cs" />
+    <Compile Include="Disassembler\VTableFixups.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
