@@ -27,8 +27,11 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using IKVM.Reflection;
+using System.Reflection.PortableExecutable;
+using System.Reflection.Metadata;
+using System.Reflection;
 
-namespace Ildasm
+namespace ICSharpCode.Decompiler.Disassembler
 {
 	partial class Disassembler
 	{
@@ -46,7 +49,7 @@ namespace Ildasm
 			internal uint NamePointerRVA;
 			internal uint OrdinalTableRVA;
 
-			internal void Read(BinaryReader br)
+			internal void Read(BlobReader br)
 			{
 				Flags = br.ReadUInt32();
 				DateTimeStamp = br.ReadUInt32();
@@ -68,34 +71,30 @@ namespace Ildasm
 			internal string name;
 		}
 
-		static Dictionary<int, List<ExportedMethod>> GetExportedMethods(Module module)
+		static Dictionary<int, List<ExportedMethod>> GetExportedMethods(PEReader peReader)
 		{
-			int rva;
-			int length;
-			module.__GetDataDirectoryEntry(0, out rva, out length);
-
-			if (rva == 0 || length < 40) {
+			if (peReader.PEHeaders.PEHeader == null)
 				return new Dictionary<int, List<ExportedMethod>>();
-			}
+			BlobReader exportTableReader = peReader.ReadFromRVA(peReader.PEHeaders.PEHeader.ExportTableDirectory);
+			if (exportTableReader.Length < 40)
+				return new Dictionary<int, List<ExportedMethod>>();
 
 			ExportDirectoryTable edt = new ExportDirectoryTable();
-			byte[] buf = new byte[512];
-			module.__ReadDataFromRVA(rva, buf, 0, 40);
-			edt.Read(new BinaryReader(new MemoryStream(buf)));
+			edt.Read(exportTableReader);
 
 			var methods = new Dictionary<int, List<ExportedMethod>>();
 			for (int i = 0; i < edt.NumberOfNamePointers; i++) {
-				module.__ReadDataFromRVA((int)edt.OrdinalTableRVA + i * 2, buf, 0, 2);
-				int ordinal = BitConverter.ToInt16(buf, 0) + (int)edt.OrdinalBase;
+				int ordinal = peReader.ReadFromRVA((int)edt.OrdinalTableRVA + i * 2).ReadInt16() + (int)edt.OrdinalBase;
 				string name = null;
 				if (edt.NamePointerRVA != 0) {
-					module.__ReadDataFromRVA((int)edt.NamePointerRVA + i * 4, buf, 0, 4);
-					module.__ReadDataFromRVA(BitConverter.ToInt32(buf, 0), buf, 0, buf.Length);
-					int len = 0;
-					while (buf[len] != 0) len++;
-					name = Encoding.ASCII.GetString(buf, 0, len);
+					int namePointer = peReader.ReadFromRVA((int)edt.NamePointerRVA + i * 4).ReadInt32();
+					BlobReader nameReader = peReader.ReadFromRVA(namePointer);
+					StringBuilder b = new StringBuilder();
+					while ((byte ch = nameReader.ReadByte()) != 0)
+						b.Append((char)ch);
+					name = b.ToString();
 				}
-				int token = GetTokenFromExportOrdinal(module, edt, ordinal);
+				int token = GetTokenFromExportOrdinal(peReader, edt, ordinal);
 				if (token == -1) {
 					continue;
 				}
@@ -112,30 +111,27 @@ namespace Ildasm
 			return methods;
 		}
 
-		static int GetTokenFromExportOrdinal(Module module, ExportDirectoryTable edt, int ordinal)
+		static int GetTokenFromExportOrdinal(PEReader peReader, ExportDirectoryTable edt, int ordinal)
 		{
-			PortableExecutableKinds peKind;
-			ImageFileMachine machine;
-			module.GetPEKind(out peKind, out machine);
-			byte[] buf = new byte[16];
-			module.__ReadDataFromRVA((int)edt.ExportAddressTableRVA + (int)(ordinal - edt.OrdinalBase) * 4, buf, 0, 4);
-			int exportRVA = BitConverter.ToInt32(buf, 0);
-			if (machine == ImageFileMachine.ARM) {
+			Machine machine = peReader.PEHeaders.CoffHeader.Machine;
+
+			int exportRVA = peReader.ReadFromRVA((int)edt.ExportAddressTableRVA + (int)(ordinal - edt.OrdinalBase) * 4).ReadInt32();
+			if (machine == Machine.ArmThumb2) {
 				// mask out the instruction set selection flag
 				exportRVA &= ~1;
 			}
-			module.__ReadDataFromRVA(exportRVA, buf, 0, 16);
+			byte[] buf = peReader.ReadFromRVA(exportRVA, 16).ReadBytes(16);
 			int offset;
-			if (machine == ImageFileMachine.I386 && buf[0] == 0xFF && buf[1] == 0x25) {
+			if (machine == Machine.I386 && buf[0] == 0xFF && buf[1] == 0x25) {
 				// for x86 the code here is:
 				//   FF 25 00 40 40 00               jmp         dword ptr ds:[00404000h]
 				offset = 2;
-			} else if (machine == ImageFileMachine.AMD64 && buf[0] == 0x48 && buf[1] == 0xA1) {
+			} else if (machine == Machine.Amd64 && buf[0] == 0x48 && buf[1] == 0xA1) {
 				// for x64 the code here is:
 				//   48 A1 00 40 40 00 00 00 00 00   mov         rax,qword ptr [0000000000404000h]
 				//   FF E0                           jmp         rax
 				offset = 2;
-			} else if (machine == ImageFileMachine.ARM && buf[0] == 0xDF && buf[1] == 0xF8 && buf[2] == 0x08 && buf[3] == 0xC0) {
+			} else if (machine == Machine.ArmThumb2 && buf[0] == 0xDF && buf[1] == 0xF8 && buf[2] == 0x08 && buf[3] == 0xC0) {
 				// for arm the code here is:
 				// F8DF C008 ldr         r12,0040145C
 				// F8DC C000 ldr         r12,[r12]
@@ -146,9 +142,8 @@ namespace Ildasm
 			} else {
 				return -1;
 			}
-			int vtableRVA = BitConverter.ToInt32(buf, offset) - (int)module.__ImageBase;
-			module.__ReadDataFromRVA(vtableRVA, buf, 0, 4);
-			return BitConverter.ToInt32(buf, 0);
+			int vtableRVA = BitConverter.ToInt32(buf, offset) - (int)peReader.PEHeaders.PEHeader.ImageBase;
+			return peReader.ReadFromRVA(vtableRVA).ReadInt32();
 		}
 	}
 }

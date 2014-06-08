@@ -27,7 +27,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
-namespace Ildasm
+namespace ICSharpCode.Decompiler.Disassembler
 {
 	sealed class LineWriter
 	{

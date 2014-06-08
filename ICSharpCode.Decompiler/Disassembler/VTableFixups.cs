@@ -27,7 +27,7 @@ using System.Linq;
 using System.Text;
 using IKVM.Reflection;
 
-namespace Ildasm
+namespace ICSharpCode.Decompiler.Disassembler
 {
 	partial class Disassembler
 	{

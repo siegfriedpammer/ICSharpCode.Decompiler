@@ -25,7 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace IKVM.Reflection.Reader
+namespace ICSharpCode.Decompiler.Disassembler
 {
 	sealed class ByteReader
 	{

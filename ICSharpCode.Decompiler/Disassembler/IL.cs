@@ -25,12 +25,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using IKVM.Reflection;
-using IKVM.Reflection.Emit;
-using Type = IKVM.Reflection.Type;
 using System.Diagnostics;
 
-namespace Ildasm
+namespace ICSharpCode.Decompiler.Disassembler
 {
 	sealed partial class Disassembler : IComparer<ExceptionHandlingClause>
 	{

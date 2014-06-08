@@ -26,7 +26,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace IKVM.Reflection.Reader
+namespace ICSharpCode.Decompiler.Disassembler
 {
 	[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
 	struct SingleConverter

@@ -24,11 +24,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Text;
-using IKVM.Reflection;
-using Type = IKVM.Reflection.Type;
 
-namespace Ildasm
+namespace ICSharpCode.Decompiler.Disassembler
 {
 	enum CompatLevel
 	{
@@ -43,8 +43,7 @@ namespace Ildasm
 	{
 		None = 0,
 		DiffMode = 1,
-		Caverbal = 2,
-		Project = 4,
+		Caverbal = 2
 	}
 
 	sealed partial class Disassembler
@@ -60,8 +59,6 @@ namespace Ildasm
 		const int COMIMAGE_FLAGS_STRONGNAMESIGNED = 0x00000008;
 		const int COMIMAGE_FLAGS_NATIVE_ENTRYPOINT = 0x00000010;
 		const int COMIMAGE_FLAGS_32BITPREFERRED = 0x00020000;
-		readonly Universe universe;
-		readonly Assembly mscorlib;
 		readonly Type typeofSystemBoolean;
 		readonly Type typeofSystemSByte;
 		readonly Type typeofSystemByte;
@@ -81,94 +78,64 @@ namespace Ildasm
 		readonly Type typeofSystemObject;
 		readonly Type typeofSystemString;
 		readonly Type typeofSystemType;
-		readonly Assembly assembly;
-		readonly Module module;
-		readonly Dictionary<Assembly, string> referencedAssemblies = new Dictionary<Assembly, string>();
-		readonly Assembly[] resolvedAssemblies;
-		readonly HashSet<Type> typerefs;
-		readonly List<FieldInfo> dataFields = new List<FieldInfo>();
+		readonly Dictionary<AssemblyReferenceHandle, string> referencedAssemblies = new Dictionary<AssemblyReferenceHandle, string>();
+		//readonly HashSet<Type> typerefs;
+		//readonly List<FieldInfo> dataFields = new List<FieldInfo>();
 		readonly Dictionary<int, List<ExportedMethod>> exportedMethods;
-		readonly string[] methodNames;
-		readonly string[] fieldNames;
+		//readonly string[] methodNames;
+		//readonly string[] fieldNames;
 		readonly CompatLevel compat;
-		readonly string outputFile;
+		readonly PEReader peReader;
+		readonly MetadataReader metadata;
 		readonly bool diffMode;
 		readonly Flags flags;
-
-		internal Disassembler(string inputFile, string outputFile, CompatLevel compat, Flags flags)
+		
+		internal Disassembler(PEReader peReader, MetadataReader metadata = null, CompatLevel compat = CompatLevel.None, Flags flags = Flags.None)
 		{
-			this.outputFile = outputFile;
-			this.compat = compat;
+			if (peReader == null)
+				throw new ArgumentNullException("peReader");
+			this.peReader = peReader;
+			this.metadata = metadata ?? peReader.GetMetadataReader();
+            this.compat = compat;
 			this.diffMode = (flags & Flags.DiffMode) != 0;
 			this.flags = flags;
-			UniverseOptions options = UniverseOptions.EnableFunctionPointers | UniverseOptions.ResolveMissingMembers | UniverseOptions.DisablePseudoCustomAttributeRetrieval;
-			if ((flags & Flags.Project) == 0) {
-				options |= UniverseOptions.DisableWindowsRuntimeProjection;
-			}
-			universe = new Universe(options);
-			universe.AssemblyResolve += new IKVM.Reflection.ResolveEventHandler(universe_AssemblyResolve);
-			mscorlib = universe.Import(typeof(object)).Assembly;
-			typeofSystemBoolean = universe.Import(typeof(bool));
-			typeofSystemSByte = universe.Import(typeof(sbyte));
-			typeofSystemByte = universe.Import(typeof(byte));
-			typeofSystemChar = universe.Import(typeof(char));
-			typeofSystemInt16 = universe.Import(typeof(short));
-			typeofSystemUInt16 = universe.Import(typeof(ushort));
-			typeofSystemInt32 = universe.Import(typeof(int));
-			typeofSystemUInt32 = universe.Import(typeof(uint));
-			typeofSystemInt64 = universe.Import(typeof(long));
-			typeofSystemUInt64 = universe.Import(typeof(ulong));
-			typeofSystemSingle = universe.Import(typeof(float));
-			typeofSystemDouble = universe.Import(typeof(double));
-			typeofSystemVoid = universe.Import(typeof(void));
-			typeofSystemIntPtr = universe.Import(typeof(IntPtr));
-			typeofSystemUIntPtr = universe.Import(typeof(UIntPtr));
-			typeofSystemTypedReference = universe.Import(typeof(TypedReference));
-			typeofSystemObject = universe.Import(typeof(object));
-			typeofSystemString = universe.Import(typeof(string));
-			typeofSystemType = universe.Import(typeof(System.Type));
-			// HACK we specify a bogus location to prevent IKVM.Reflection from loading external modules
-			// TODO IKVM.Reflection really should have a way to avoid it trying to load external modules (e.g. a UniverseOption to always use the ModuleResolve event)
-			var raw = universe.OpenRawModule(System.IO.File.OpenRead(inputFile), System.IO.Path.GetTempPath() + "/Dummy");
-			if (raw.IsManifestModule) {
-				assembly = universe.LoadAssembly(raw);
-				module = assembly.ManifestModule;
-			} else {
-				var ab = universe.DefineDynamicAssembly(new AssemblyName("<ModuleContainer>"), IKVM.Reflection.Emit.AssemblyBuilderAccess.ReflectionOnly);
-				assembly = ab;
-				module = ab.__AddModule(raw);
-			}
-			exportedMethods = GetExportedMethods(module);
+			typeofSystemBoolean = (typeof(bool));
+			typeofSystemSByte = (typeof(sbyte));
+			typeofSystemByte = (typeof(byte));
+			typeofSystemChar = (typeof(char));
+			typeofSystemInt16 = (typeof(short));
+			typeofSystemUInt16 = (typeof(ushort));
+			typeofSystemInt32 = (typeof(int));
+			typeofSystemUInt32 = (typeof(uint));
+			typeofSystemInt64 = (typeof(long));
+			typeofSystemUInt64 = (typeof(ulong));
+			typeofSystemSingle = (typeof(float));
+			typeofSystemDouble = (typeof(double));
+			typeofSystemVoid = (typeof(void));
+			typeofSystemIntPtr = (typeof(IntPtr));
+			typeofSystemUIntPtr = (typeof(UIntPtr));
+			typeofSystemTypedReference = (typeof(TypedReference));
+			typeofSystemObject = (typeof(object));
+			typeofSystemString = (typeof(string));
+			typeofSystemType = (typeof(System.Type));
+
+			exportedMethods = GetExportedMethods(peReader);
 
 			var names = new HashSet<string>();
-			AssemblyName[] assemblyRefs = module.__GetReferencedAssemblies();
-			resolvedAssemblies = new Assembly[assemblyRefs.Length];
-			for (int i = 0; i < resolvedAssemblies.Length; i++) {
-				string name = assemblyRefs[i].Name;
+			int i = 0;
+			foreach (var assemblyReferenceHandle in metadata.AssemblyReferences) {
+				var assemblyReference = metadata.GetAssemblyReference(assemblyReferenceHandle);
+				string name = metadata.GetString(assemblyReference.Name);
 				while (names.Contains(name)) {
 					name = name + "_" + i;
 				}
 				names.Add(name);
-				resolvedAssemblies[i] = universe.CreateMissingAssembly(assemblyRefs[i].FullName);
-				referencedAssemblies.Add(resolvedAssemblies[i], name);
+				referencedAssemblies.Add(assemblyReferenceHandle, name);
+				i++;
 			}
-			module.__ResolveReferencedAssemblies(resolvedAssemblies);
-			typerefs = new HashSet<Type>(module.__GetReferencedTypes());
-			methodNames = GetMethodNames();
-			fieldNames = GetFieldNames();
-		}
-
-		Assembly universe_AssemblyResolve(object sender, IKVM.Reflection.ResolveEventArgs args)
-		{
-			if (resolvedAssemblies != null) {
-				foreach (var asm in resolvedAssemblies) {
-					AssemblyComparisonResult result;
-					if (universe.CompareAssemblyIdentity(args.Name, false, asm.FullName, false, out result)) {
-						return asm;
-					}
-				}
-			}
-			return universe.CreateMissingAssembly(args.Name);
+			//typerefs = new HashSet<Type>(module.__GetReferencedTypes());
+			//methodNames = GetMethodNames();
+			//fieldNames = GetFieldNames();
 		}
 
 		internal void Save(System.IO.TextWriter writer)
@@ -176,15 +143,15 @@ namespace Ildasm
 			LineWriter lw = new LineWriter(writer);
 			WriteCopyrightHeader(lw);
 			WriteVTableFixupComment(lw);
-			if (!(assembly is IKVM.Reflection.Emit.AssemblyBuilder)) {
-				WriteMscorlibDirective(lw);
-			}
+			//if (!(assembly is IKVM.Reflection.Emit.AssemblyBuilder)) {
+			//	WriteMscorlibDirective(lw);
+			//}
 			WriteModuleManifest(lw);
-			if (!(assembly is IKVM.Reflection.Emit.AssemblyBuilder)) {
+			if (metadata.IsAssembly) {
 				WriteAssemblyManifest(lw);
 			}
 			WriteExportedTypes(lw);
-			if (!(assembly is IKVM.Reflection.Emit.AssemblyBuilder)) {
+			if (metadata.IsAssembly) {
 				WriteModules(lw);
 				WriteResources(lw);
 			}
@@ -196,9 +163,9 @@ namespace Ildasm
 			WriteUnhandledCustomAttributes(lw);
 			WriteData(lw);
 			lw.WriteLine("// *********** DISASSEMBLY COMPLETE ***********************");
-			WriteNativeResources(lw);
 		}
 
+		/*
 		string[] GetMethodNames()
 		{
 			var methods = new HashSet<MethodBase>(new MethodSignatureComparer());
@@ -309,6 +276,7 @@ namespace Ildasm
 				return field.Name.GetHashCode() ^ (decl == null ? 0 : decl.GetHashCode());
 			}
 		}
+		*/
 
 		void WriteExportedTypes(LineWriter lw)
 		{
@@ -423,6 +391,7 @@ namespace Ildasm
 			}
 		}
 
+		/*
 		void WriteMscorlibDirective(LineWriter lw)
 		{
 			Type obj = assembly.GetType("System.Object");
@@ -432,6 +401,7 @@ namespace Ildasm
 				lw.WriteLine();
 			}
 		}
+		*/
 
 		int GetPointerSize()
 		{
@@ -568,16 +538,6 @@ namespace Ildasm
 				module.__ReadDataFromRVA(rva, buf, 0, buf.Length);
 				WriteBytes(lw, buf, true);
 				lw.WriteLine();
-			}
-		}
-
-		void WriteNativeResources(LineWriter lw)
-		{
-			int rva;
-			int length;
-			module.__GetDataDirectoryEntry(2, out rva, out length);
-			if (rva != 0 && outputFile != null && !diffMode) {
-				lw.WriteLine("// WARNING: Created Win32 resource file {0}", System.IO.Path.ChangeExtension(outputFile, "res"));
 			}
 		}
 
@@ -1515,6 +1475,11 @@ namespace Ildasm
 			}
 		}
 
+		string QuoteIdentifier(StringHandle str, bool quote = false)
+		{
+			return QuoteIdentifier(metadata.GetString(str), quote);
+		}
+
 		string QuoteIdentifier(string str, bool quote = false)
 		{
 			if (diffMode) {
@@ -1766,10 +1731,11 @@ namespace Ildasm
 
 		void WriteAssemblyManifest(LineWriter lw)
 		{
+			var assembly = metadata.GetAssemblyDefinition();
 			lw.WriteLine(".assembly {0}{1}{2}",
-				((int)assembly.__AssemblyFlags & 16) != 0 ? "cil " : "",
-				((int)assembly.__AssemblyFlags & 512) != 0 && (compat == CompatLevel.None || compat >= CompatLevel.V45) ? "windowsruntime " : "",
-				QuoteIdentifier(assembly.GetName().Name));
+				((int)assembly.Flags & 16) != 0 ? "cil " : "",
+				((int)assembly.Flags & 512) != 0 && (compat == CompatLevel.None || compat >= CompatLevel.V45) ? "windowsruntime " : "",
+				QuoteIdentifier(assembly.Name));
 			lw.WriteLine("{");
 			IEnumerable<CustomAttributeData> cas = assembly.__GetCustomAttributes(null, false);
 			if (diffMode) {

@@ -25,11 +25,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using IKVM.Reflection;
-using IKVM.Reflection.Reader;
-using Type = IKVM.Reflection.Type;
 
-namespace Ildasm
+namespace ICSharpCode.Decompiler.Disassembler
 {
 	partial class Disassembler
 	{
@@ -153,7 +150,7 @@ namespace Ildasm
 						sb.Append("property ");
 						break;
 					default:
-						throw new IKVM.Reflection.BadImageFormatException();
+						throw new BadImageFormatException();
 				}
 				string typeName;
 				Type fieldOrPropertyType = ReadFieldOrPropType(sb, br, out typeName);
