@@ -29,6 +29,8 @@ using SRM = System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using System.Text;
+using Type = ICSharpCode.Decompiler.Metadata.Type;
+using System.Reflection;
 
 namespace ICSharpCode.Decompiler.Disassembler
 {
@@ -61,28 +63,9 @@ namespace ICSharpCode.Decompiler.Disassembler
 		const int COMIMAGE_FLAGS_STRONGNAMESIGNED = 0x00000008;
 		const int COMIMAGE_FLAGS_NATIVE_ENTRYPOINT = 0x00000010;
 		const int COMIMAGE_FLAGS_32BITPREFERRED = 0x00020000;
-		readonly Type typeofSystemBoolean;
-		readonly Type typeofSystemSByte;
-		readonly Type typeofSystemByte;
-		readonly Type typeofSystemChar;
-		readonly Type typeofSystemInt16;
-		readonly Type typeofSystemUInt16;
-		readonly Type typeofSystemInt32;
-		readonly Type typeofSystemUInt32;
-		readonly Type typeofSystemInt64;
-		readonly Type typeofSystemUInt64;
-		readonly Type typeofSystemSingle;
-		readonly Type typeofSystemDouble;
-		readonly Type typeofSystemVoid;
-		readonly Type typeofSystemIntPtr;
-		readonly Type typeofSystemUIntPtr;
-		readonly Type typeofSystemTypedReference;
-		readonly Type typeofSystemObject;
-		readonly Type typeofSystemString;
-		readonly Type typeofSystemType;
 		readonly Dictionary<AssemblyReference, string> referencedAssemblies = new Dictionary<AssemblyReference, string>();
-		//readonly HashSet<Type> typerefs;
-		//readonly List<FieldInfo> dataFields = new List<FieldInfo>();
+		readonly HashSet<Type> typerefs;
+		readonly List<Field> dataFields = new List<Field>();
 		readonly Dictionary<int, List<ExportedMethod>> exportedMethods;
 		//readonly string[] methodNames;
 		//readonly string[] fieldNames;
@@ -99,26 +82,7 @@ namespace ICSharpCode.Decompiler.Disassembler
             this.compat = compat;
 			this.diffMode = (flags & Flags.DiffMode) != 0;
 			this.flags = flags;
-			typeofSystemBoolean = (typeof(bool));
-			typeofSystemSByte = (typeof(sbyte));
-			typeofSystemByte = (typeof(byte));
-			typeofSystemChar = (typeof(char));
-			typeofSystemInt16 = (typeof(short));
-			typeofSystemUInt16 = (typeof(ushort));
-			typeofSystemInt32 = (typeof(int));
-			typeofSystemUInt32 = (typeof(uint));
-			typeofSystemInt64 = (typeof(long));
-			typeofSystemUInt64 = (typeof(ulong));
-			typeofSystemSingle = (typeof(float));
-			typeofSystemDouble = (typeof(double));
-			typeofSystemVoid = (typeof(void));
-			typeofSystemIntPtr = (typeof(IntPtr));
-			typeofSystemUIntPtr = (typeof(UIntPtr));
-			typeofSystemTypedReference = (typeof(TypedReference));
-			typeofSystemObject = (typeof(object));
-			typeofSystemString = (typeof(string));
-			typeofSystemType = (typeof(System.Type));
-
+			
 			exportedMethods = GetExportedMethods(module);
 
 			var names = new HashSet<string>();
@@ -132,7 +96,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 				referencedAssemblies.Add(assemblyReference, name);
 				i++;
 			}
-			//typerefs = new HashSet<Type>(module.__GetReferencedTypes());
+			typerefs = new HashSet<Type>(module.TypeReferences.Select(tr => (Type)tr));
 			//methodNames = GetMethodNames();
 			//fieldNames = GetFieldNames();
 		}
@@ -142,9 +106,9 @@ namespace ICSharpCode.Decompiler.Disassembler
 			LineWriter lw = new LineWriter(writer);
 			WriteCopyrightHeader(lw);
 			WriteVTableFixupComment(lw);
-			//if (!(assembly is IKVM.Reflection.Emit.AssemblyBuilder)) {
-			//	WriteMscorlibDirective(lw);
-			//}
+			if (module.IsAssembly) {
+				WriteMscorlibDirective(lw);
+			}
 			WriteModuleManifest(lw);
 			if (module.IsAssembly) {
 				WriteAssemblyManifest(lw);
@@ -337,9 +301,8 @@ namespace ICSharpCode.Decompiler.Disassembler
 
 		void WriteUnhandledCustomAttributes(LineWriter lw)
 		{
-			foreach (var ca in module.__EnumerateCustomAttributeTable()) {
-				int parent = ca.__Parent;
-				switch (parent >> 24) {
+			foreach (var ca in module.CustomAttributes) {
+				switch ((int)ca.Parent.HandleType) {
 					case 0x00:	// Module
 					case 0x02:	// TypeDef
 					case 0x04:	// Field
@@ -353,12 +316,12 @@ namespace ICSharpCode.Decompiler.Disassembler
 					case 0x01:	// TypeRef
 						lw.Write(".custom (");
 						int level = lw.Column - 1;
-						WriteTypeDefOrRef(lw, module.ResolveType(parent));
+						WriteTypeDefOrRef(lw, module.FromHandle((SRM.TypeReferenceHandle) ca.Parent));
 						lw.Write(") ");
 						WriteCustomAttributeImpl(lw, ca, false, level);
 						break;
 					default:
-						if (compat == CompatLevel.V20 || compat == CompatLevel.V40 || (parent >> 24) != 0x09) {
+						if (compat == CompatLevel.V20 || compat == CompatLevel.V40 || ((int)ca.Parent.HandleType) != 0x09) {
 							lw.Write(".custom (UNKNOWN_OWNER) ");
 							WriteCustomAttributeImpl(lw, ca, false, lw.Column - 16);
 						}
@@ -369,8 +332,8 @@ namespace ICSharpCode.Decompiler.Disassembler
 
 		void WriteGlobalFields(LineWriter lw)
 		{
-			FieldInfo[] fields = module.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
-			if (fields.Length != 0) {
+			var fields = module.ModuleType.GetFields();
+			if (fields.Count != 0) {
 				lw.WriteLine();
 				lw.WriteLine();
 				lw.WriteLine("// ================== GLOBAL FIELDS ==========================");
@@ -386,10 +349,10 @@ namespace ICSharpCode.Decompiler.Disassembler
 
 		void WriteModules(LineWriter lw)
 		{
-			foreach (var module in assembly.GetModules(true)) {
-				if (module != this.module) {
-					lw.WriteLine(module.IsResource() ? ".file nometadata {0}" : ".file {0}", QuoteIdentifier(module.Name));
-					byte[] hash = module.__ModuleHash;
+			foreach (var assemblyFile in module.AssemblyFiles) {
+                if (module != this.module) {
+					lw.WriteLine(!assemblyFile.ContainsMetadata ? ".file nometadata {0}" : ".file {0}", QuoteIdentifier(assemblyFile.Name));
+					byte[] hash = assemblyFile.HashValue.GetBytes();
 					if (hash != null) {
 						lw.Write("    .hash = (");
 						WriteBytes(lw, hash, false);
@@ -399,30 +362,26 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 		}
 
-		/*
 		void WriteMscorlibDirective(LineWriter lw)
 		{
-			Type obj = assembly.GetType("System.Object");
-			if (obj != null && !obj.__IsMissing && obj.BaseType == null && obj.IsClass) {
+			var obj = module.TypeDefinitions.FirstOrDefault(td => td.Name == "Object" && td.Namespace.Name == "System");
+			if (!obj.IsNil && obj.BaseType.IsNil) {
 				lw.WriteLine();
 				lw.WriteLine(".mscorlib ");
 				lw.WriteLine();
 			}
 		}
-		*/
 
 		int GetPointerSize()
 		{
-			PortableExecutableKinds peKind;
-			ImageFileMachine machine;
-			module.GetPEKind(out peKind, out machine);
-			if ((peKind & PortableExecutableKinds.PE32Plus) != 0) {
+			if (module.PEHeaders?.PEHeader?.Magic == PEMagic.PE32Plus) {
 				return 8;
 			} else {
 				return 4;
 			}
 		}
 
+		/*
 		int GetTypeSize(Type type)
 		{
 			int packingSize;
@@ -453,6 +412,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 			return typeSize;
 		}
+		*/
 
 		struct DataPointer : IComparable<DataPointer>
 		{
@@ -477,8 +437,9 @@ namespace ICSharpCode.Decompiler.Disassembler
 			foreach (VTableFixups fixup in GetVTableFixups()) {
 				ptrs.Add(new DataPointer(fixup.RVA, fixup.Count * ((fixup.Type & COR_VTABLE_32BIT) != 0 ? 4 : 8)));
 			}
-			foreach (FieldInfo field in dataFields) {
-				ptrs.Add(new DataPointer(field.__FieldRVA, GetTypeSize(field.FieldType)));
+			foreach (Field field in dataFields) {
+				throw new NotImplementedException();
+				//ptrs.Add(new DataPointer(field.GetRelativeVirtualAddress(), GetTypeSize(field.FieldType)));
 			}
 			ptrs.Sort();
 			for (int i = 0; i < ptrs.Count - 1; i++) {
@@ -489,15 +450,15 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 			for (int i = 0; i < ptrs.Count; i++) {
 				int rva = ptrs[i].RVA;
-				string name;
-				int characteristics;
-				int virtualAddress;
-				int virtualSize;
-				int pointerToRawData;
-				int sizeOfRawData;
-				if (!module.__GetSectionInfo(rva, out name, out characteristics, out virtualAddress, out virtualSize, out pointerToRawData, out sizeOfRawData)) {
+				int sectionIndex = module.PEHeaders.GetContainingSectionIndex(rva);
+				if (sectionIndex < 0)
 					continue;
-				}
+				var section = module.PEHeaders.SectionHeaders[sectionIndex];
+				string name = section.Name;
+				int virtualAddress = section.VirtualAddress;
+				int virtualSize = section.VirtualSize;
+				int sizeOfRawData = section.SizeOfRawData;
+
 				int alignment = 0;
 				int size = ptrs[i].Size;
 				if (rva + size >= virtualAddress + virtualSize) {
@@ -542,8 +503,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 			} else {
 				lw.WriteLine("bytearray (");
 				lw.GoToColumn(17);
-				byte[] buf = new byte[size];
-				module.__ReadDataFromRVA(rva, buf, 0, buf.Length);
+				byte[] buf = module.ReadFromRVA(rva, size).ReadBytes(size);
 				WriteBytes(lw, buf, true);
 				lw.WriteLine();
 			}
@@ -574,8 +534,8 @@ namespace ICSharpCode.Decompiler.Disassembler
 
 		void WriteTypes(LineWriter lw)
 		{
-			Type[] types = module.GetTypes();
-			if (types.Length != 0) {
+			var types = module.TypeDefinitions;
+			if (types.Count != 0) {
 				lw.WriteLine();
 				lw.WriteLine("// =============== CLASS MEMBERS DECLARATION ===================");
 				lw.WriteLine();
@@ -590,29 +550,29 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 		}
 
-		void WriteType(LineWriter lw, IKVM.Reflection.Type type)
+		void WriteType(LineWriter lw, TypeDefinition type)
 		{
 			int level = lw.Column;
 			lw.Write(".class ");
-			if (type.IsInterface) {
+			if ((type.Attributes & TypeAttributes.Interface) != 0) {
 				lw.Write("interface ");
 			}
-			if (type.IsPublic) {
+			if ((type.Attributes & TypeAttributes.VisibilityMask) == TypeAttributes.Public) {
 				lw.Write("public ");
-			} else if (!type.IsNested) {
+			} else if ((type.Attributes & TypeAttributes.VisibilityMask) == TypeAttributes.NotPublic) {
 				lw.Write("private ");
 			}
-			if (type.IsAbstract) {
+			if ((type.Attributes & TypeAttributes.Abstract) != 0) {
 				lw.Write("abstract ");
 			}
-			switch (type.StructLayoutAttribute.Value) {
-				case System.Runtime.InteropServices.LayoutKind.Auto:
+			switch (type.Attributes & TypeAttributes.LayoutMask) {
+				case TypeAttributes.AutoLayout:
 					lw.Write("auto ");
 					break;
-				case System.Runtime.InteropServices.LayoutKind.Sequential:
+				case TypeAttributes.SequentialLayout:
 					lw.Write("sequential ");
 					break;
-				case System.Runtime.InteropServices.LayoutKind.Explicit:
+				case TypeAttributes.ExplicitLayout:
 					lw.Write("explicit ");
 					break;
 			}
@@ -636,7 +596,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 			if ((type.Attributes & TypeAttributes.WindowsRuntime) != 0 && (compat == CompatLevel.None || compat >= CompatLevel.V45)) {
 				lw.Write("windowsruntime ");
 			}
-			if (type.IsSealed) {
+			if ((type.Attributes & TypeAttributes.Sealed) != 0) {
 				lw.Write("sealed ");
 			}
 			switch (type.Attributes & TypeAttributes.VisibilityMask) {
@@ -668,7 +628,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 			lw.WriteLine();
 			lw.GoToColumn(level);
-			if (type.BaseType != null) {
+			if (!type.BaseType.IsNil) {
 				lw.Write("       extends ");
 				WriteInterfaceOrBaseType(lw, type.BaseType);
 				lw.WriteLine();
@@ -1572,7 +1532,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 		}
 
-		void WriteField(LineWriter lw, FieldInfo field)
+		void WriteField(LineWriter lw, Field field)
 		{
 			int level = lw.Column;
 			lw.Write(".field ");
@@ -2131,13 +2091,13 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 		}
 
-		void WriteCustomAttribute(LineWriter lw, CustomAttributeData ca)
+		void WriteCustomAttribute(LineWriter lw, CustomAttribute ca)
 		{
 			lw.Write(".custom ");
 			WriteCustomAttributeImpl(lw, ca, false, lw.Column);
 		}
 
-		void WriteCustomAttributeImpl(LineWriter lw, CustomAttributeData ca, bool comment, int level0)
+		void WriteCustomAttributeImpl(LineWriter lw, CustomAttribute ca, bool comment, int level0)
 		{
 			lw.Write("instance void ");
 			WriteTypeDefOrRef(lw, ca.Constructor.DeclaringType);
@@ -2385,6 +2345,14 @@ namespace ICSharpCode.Decompiler.Disassembler
 		}
 
 		void WriteTypeNameNoOuter(LineWriter lw, TypeName type)
+		{
+			if (type.Namespace != null) {
+				lw.Write("{0}.", QuoteIdentifier(type.Namespace));
+			}
+			lw.Write("{0}", QuoteIdentifier(type.Name));
+		}
+
+		void WriteTypeNameNoOuter(LineWriter lw, Type type)
 		{
 			if (type.Namespace != null) {
 				lw.Write("{0}.", QuoteIdentifier(type.Namespace));

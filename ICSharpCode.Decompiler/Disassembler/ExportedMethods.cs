@@ -49,7 +49,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 			internal uint NamePointerRVA;
 			internal uint OrdinalTableRVA;
 
-			internal void Read(BlobReader br)
+			internal void Read(SRM.BlobReader br)
 			{
 				Flags = br.ReadUInt32();
 				DateTimeStamp = br.ReadUInt32();
@@ -73,9 +73,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 
 		static Dictionary<int, List<ExportedMethod>> GetExportedMethods(ModuleDefinition module)
 		{
-			if (module.PEHeaders.PEHeader == null)
-				return new Dictionary<int, List<ExportedMethod>>();
-			var exportTableReader = module.ReadFromRVA(module.PEHeaders.PEHeader.ExportTableDirectory);
+			SRM.BlobReader exportTableReader = module.ReadFromRVA(module.PEHeaders?.PEHeader?.ExportTableDirectory ?? default(DirectoryEntry));
 			if (exportTableReader.Length < 40)
 				return new Dictionary<int, List<ExportedMethod>>();
 
@@ -88,7 +86,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 				string name = null;
 				if (edt.NamePointerRVA != 0) {
 					int namePointer = module.ReadFromRVA((int)edt.NamePointerRVA + i * 4).ReadInt32();
-					BlobReader nameReader = module.ReadFromRVA(namePointer);
+					SRM.BlobReader nameReader = module.ReadFromRVA(namePointer);
 					StringBuilder b = new StringBuilder();
 					while ((byte ch = nameReader.ReadByte()) != 0)
 						b.Append((char)ch);
@@ -111,16 +109,16 @@ namespace ICSharpCode.Decompiler.Disassembler
 			return methods;
 		}
 
-		static int GetTokenFromExportOrdinal(PEReader peReader, ExportDirectoryTable edt, int ordinal)
+		static int GetTokenFromExportOrdinal(ModuleDefinition module , ExportDirectoryTable edt, int ordinal)
 		{
-			Machine machine = peReader.PEHeaders.CoffHeader.Machine;
+			Machine machine = module.PEHeaders.CoffHeader.Machine;
 
-			int exportRVA = peReader.ReadFromRVA((int)edt.ExportAddressTableRVA + (int)(ordinal - edt.OrdinalBase) * 4).ReadInt32();
+			int exportRVA = module.ReadFromRVA((int)edt.ExportAddressTableRVA + (int)(ordinal - edt.OrdinalBase) * 4).ReadInt32();
 			if (machine == Machine.ArmThumb2) {
 				// mask out the instruction set selection flag
 				exportRVA &= ~1;
 			}
-			byte[] buf = peReader.ReadFromRVA(exportRVA, 16).ReadBytes(16);
+			byte[] buf = module.ReadFromRVA(exportRVA, 16).ReadBytes(16);
 			int offset;
 			if (machine == Machine.I386 && buf[0] == 0xFF && buf[1] == 0x25) {
 				// for x86 the code here is:
@@ -142,8 +140,8 @@ namespace ICSharpCode.Decompiler.Disassembler
 			} else {
 				return -1;
 			}
-			int vtableRVA = BitConverter.ToInt32(buf, offset) - (int)peReader.PEHeaders.PEHeader.ImageBase;
-			return peReader.ReadFromRVA(vtableRVA).ReadInt32();
+			int vtableRVA = BitConverter.ToInt32(buf, offset) - (int)module.PEHeaders.PEHeader.ImageBase;
+			return module.ReadFromRVA(vtableRVA).ReadInt32();
 		}
 	}
 }

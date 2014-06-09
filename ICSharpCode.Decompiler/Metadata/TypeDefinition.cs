@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,5 +30,20 @@ namespace ICSharpCode.Decompiler.Metadata
 			return default(Method);
 		}
 
-	}
+		public bool IsNested
+		{
+			get
+			{
+				return !this.GetDeclaringType().IsNil;
+			}
+		}
+
+		public bool IsGenericTypeDefinition
+		{
+			get
+			{
+				return this.GetGenericParameters().Count > 0;
+			}
+		}
+    }
 }
