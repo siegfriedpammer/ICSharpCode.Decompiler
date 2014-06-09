@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-using IKVM.Reflection;
 using System.Reflection.PortableExecutable;
 using System.Reflection.Metadata;
 using System.Reflection;

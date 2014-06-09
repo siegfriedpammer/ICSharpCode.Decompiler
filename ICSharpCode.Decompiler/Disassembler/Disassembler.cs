@@ -21,10 +21,12 @@
   jeroen@frijters.net
   
 */
+using ICSharpCode.Decompiler.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using System.Text;
 
@@ -280,31 +282,41 @@ namespace ICSharpCode.Decompiler.Disassembler
 
 		void WriteExportedTypes(LineWriter lw)
 		{
-			Type[] exported = module.__GetExportedTypes();
-			for (int i = 0; i < exported.Length; i++) {
+			foreach (var exportedType in metadata.GetExportedTypes()) {
+				var typeName = metadata.GetTypeName(exportedType);
 				lw.Write(".class extern ");
-				if (!exported[i].IsNested) {
+				if (typeName.IsNested) {
 					lw.Write("forwarder ");
 				}
-				WriteTypeNameNoOuter(lw, exported[i]);
+				WriteTypeNameNoOuter(lw, typeName);
 				lw.WriteLine();
 				lw.WriteLine("{");
-				if (exported[i].IsNested) {
+				if (typeName.IsNested) {
 					lw.Write("  .class extern ");
-					WriteTypeName(lw, exported[i].DeclaringType);
+					WriteTypeName(lw, typeName.GetDeclaringType());
 					lw.WriteLine();
 				} else {
-					lw.WriteLine("  .assembly extern {0}", QuoteIdentifier(referencedAssemblies[exported[i].Assembly]));
+					lw.WriteLine("  .assembly extern {0}", QuoteIdentifier(GetAssemblyName(typeName.Assembly)));
 				}
-				if (exported[i].MetadataToken != 0) {
-					lw.WriteLine("  .class 0x{0:X8}", exported[i].MetadataToken);
+				if (exportedType.TypeDefId != 0) {
+					lw.WriteLine("  .class 0x{0:X8}", exportedType.TypeDefId);
 				}
 				lw.WriteLine("}");
 			}
 		}
 
+		private string GetAssemblyName(Handle assembly)
+		{
+			if (assembly.HandleType == HandleType.Assembly)
+				return referencedAssemblies[(AssemblyReferenceHandle)assembly];
+			else
+				return assembly.ToHexString();
+		}
+
 		void WriteGlobalMethods(LineWriter lw)
 		{
+			TypeDefinition moduleTypeDef = metadata.GetModuleType();
+			var cctor = moduleTypeDef.GetTypeInitializer();
 			MethodInfo[] methods = module.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
 			ConstructorInfo cctor = module.__ModuleInitializer;
 			if (methods.Length != 0 || cctor != null) {
@@ -2367,21 +2379,21 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 		}
 
-		void WriteTypeName(LineWriter lw, Type type)
+		void WriteTypeName(LineWriter lw, TypeName type)
 		{
 			if (type.IsNested) {
-				WriteTypeName(lw, type.DeclaringType);
+				WriteTypeName(lw, type.GetDeclaringType());
 				lw.Write("/");
 			}
 			WriteTypeNameNoOuter(lw, type);
 		}
 
-		void WriteTypeNameNoOuter(LineWriter lw, Type type)
+		void WriteTypeNameNoOuter(LineWriter lw, TypeName type)
 		{
-			if (type.__Namespace != null) {
-				lw.Write("{0}.", QuoteIdentifier(type.__Namespace));
+			if (type.Namespace != null) {
+				lw.Write("{0}.", QuoteIdentifier(type.Namespace));
 			}
-			lw.Write("{0}", QuoteIdentifier(type.__Name));
+			lw.Write("{0}", QuoteIdentifier(type.Name));
 		}
 
 		void WriteTypeDefOrRef(LineWriter lw, Type type)

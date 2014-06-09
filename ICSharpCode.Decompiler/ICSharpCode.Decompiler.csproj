@@ -48,22 +48,38 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Disassembler\ByteReader.cs" />
-    <Compile Include="Disassembler\CABlob.cs" />
-    <Compile Include="Disassembler\Disassembler.cs" />
-    <Compile Include="Disassembler\ExportedMethods.cs" />
-    <Compile Include="Disassembler\IL.cs" />
-    <Compile Include="Disassembler\Keywords.cs" />
-    <Compile Include="Disassembler\LineWriter.cs" />
-    <Compile Include="Disassembler\Util.cs" />
-    <Compile Include="Disassembler\VTableFixups.cs" />
-    <Compile Include="MetadataExtensions.cs" />
+    <Compile Include="Metadata\Blob.cs" />
+    <Compile Include="Metadata\Method.cs" />
+    <Compile Include="Metadata\Module.cs" />
+    <Compile Include="Metadata\TypeDefinition.cs" />
+    <Compile Include="Metadata\WrapAPI.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>WrapAPI.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Metadata\TypeName.cs" />
+    <Compile Include="Metadata\MetadataExtensions.cs" />
+    <Compile Include="Metadata\WrapCollections.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>WrapCollections.tt</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Metadata\WrapCollections.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>WrapCollections.cs</LastGenOutput>
+    </None>
+    <None Include="Metadata\WrapAPI.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>WrapAPI.cs</LastGenOutput>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
