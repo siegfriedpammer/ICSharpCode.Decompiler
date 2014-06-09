@@ -77,11 +77,15 @@ foreach (var typeTuple in typeTuples.Where(t => t.collectionType != null)) {
 
 		IEnumerator<<#=mainType.Name#>> IEnumerable<<#=mainType.Name#>>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<<#=mainType.Name#>>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.<#=handleType.Name#>, <#=mainType.Name#>>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<<#=mainType.Name#>>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.<#=handleType.Name#>, <#=mainType.Name#>>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -104,6 +108,8 @@ foreach (var typeTuple in typeTuples.Where(t => t.collectionType != null)) {
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}

@@ -71,11 +71,5 @@ namespace ICSharpCode.Decompiler.Metadata
 		{
 			return "0x" + MetadataTokens.GetToken(handle).ToString("x8");
 		}
-
-		public static bool IsTypeInitializer(this Method method, MetadataReader metadata)
-		{
-			return (method.Attributes & MethodAttributes.Static) != 0
-					&& metadata.StringEquals(method.Name, ".cctor");
-		}
 	}
 }

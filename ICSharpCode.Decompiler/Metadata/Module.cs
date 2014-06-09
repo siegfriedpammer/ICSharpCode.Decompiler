@@ -9,7 +9,7 @@ using SRM = System.Reflection.Metadata;
 
 namespace ICSharpCode.Decompiler.Metadata
 {
-	public class Module
+	public partial class Module
 	{
 		internal readonly PEReader peReader;
         internal readonly SRM.MetadataReader metadata;

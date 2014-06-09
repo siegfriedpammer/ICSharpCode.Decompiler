@@ -48,11 +48,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<AssemblyFile> IEnumerable<AssemblyFile>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<AssemblyFile>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.AssemblyFileHandle, AssemblyFile>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<AssemblyFile>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.AssemblyFileHandle, AssemblyFile>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -75,6 +79,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -104,11 +110,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<AssemblyReference> IEnumerable<AssemblyReference>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<AssemblyReference>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.AssemblyReferenceHandle, AssemblyReference>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<AssemblyReference>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.AssemblyReferenceHandle, AssemblyReference>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -131,6 +141,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -160,11 +172,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<CustomAttribute> IEnumerable<CustomAttribute>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<CustomAttribute>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.CustomAttributeHandle, CustomAttribute>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<CustomAttribute>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.CustomAttributeHandle, CustomAttribute>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -187,6 +203,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -216,11 +234,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<DeclarativeSecurityAttribute> IEnumerable<DeclarativeSecurityAttribute>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<DeclarativeSecurityAttribute>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.DeclarativeSecurityAttributeHandle, DeclarativeSecurityAttribute>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<DeclarativeSecurityAttribute>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.DeclarativeSecurityAttributeHandle, DeclarativeSecurityAttribute>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -243,6 +265,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -272,11 +296,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<Event> IEnumerable<Event>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<Event>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.EventHandle, Event>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<Event>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.EventHandle, Event>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -299,6 +327,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -328,11 +358,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<Field> IEnumerable<Field>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<Field>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.FieldHandle, Field>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<Field>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.FieldHandle, Field>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -355,6 +389,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -384,11 +420,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<GenericParameter> IEnumerable<GenericParameter>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<GenericParameter>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.GenericParameterHandle, GenericParameter>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<GenericParameter>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.GenericParameterHandle, GenericParameter>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -411,6 +451,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -440,11 +482,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<GenericParameterConstraint> IEnumerable<GenericParameterConstraint>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<GenericParameterConstraint>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.GenericParameterConstraintHandle, GenericParameterConstraint>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<GenericParameterConstraint>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.GenericParameterConstraintHandle, GenericParameterConstraint>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -467,6 +513,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -496,11 +544,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<ManifestResource> IEnumerable<ManifestResource>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<ManifestResource>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.ManifestResourceHandle, ManifestResource>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<ManifestResource>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.ManifestResourceHandle, ManifestResource>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -523,6 +575,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -552,11 +606,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<MemberReference> IEnumerable<MemberReference>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<MemberReference>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.MemberReferenceHandle, MemberReference>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<MemberReference>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.MemberReferenceHandle, MemberReference>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -579,6 +637,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -608,11 +668,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<Method> IEnumerable<Method>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<Method>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.MethodHandle, Method>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<Method>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.MethodHandle, Method>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -635,6 +699,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -664,11 +730,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<Parameter> IEnumerable<Parameter>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<Parameter>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.ParameterHandle, Parameter>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<Parameter>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.ParameterHandle, Parameter>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -691,6 +761,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -720,11 +792,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<Property> IEnumerable<Property>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<Property>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.PropertyHandle, Property>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<Property>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.PropertyHandle, Property>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -747,6 +823,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -776,11 +854,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<TypeForwarder> IEnumerable<TypeForwarder>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<TypeForwarder>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.TypeForwarderHandle, TypeForwarder>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<TypeForwarder>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.TypeForwarderHandle, TypeForwarder>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -803,6 +885,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -832,11 +916,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<TypeReference> IEnumerable<TypeReference>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<TypeReference>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.TypeReferenceHandle, TypeReference>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<TypeReference>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.TypeReferenceHandle, TypeReference>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -859,6 +947,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}
@@ -888,11 +978,15 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		IEnumerator<TypeDefinition> IEnumerable<TypeDefinition>.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<TypeDefinition>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.TypeHandle, TypeDefinition>(module.FromHandle)).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
+			if (module == null)
+				return Enumerable.Empty<TypeDefinition>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.TypeHandle, TypeDefinition>(module.FromHandle)).GetEnumerator();
 		}
 
@@ -915,6 +1009,8 @@ namespace ICSharpCode.Decompiler.Metadata
 
 			public bool MoveNext()
 			{
+				if (module == null)
+					return false;
 				return handleEnumerator.MoveNext();
 			}
 		}

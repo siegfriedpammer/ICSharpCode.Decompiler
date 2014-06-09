@@ -9,16 +9,17 @@ using System.Threading.Tasks;
 
 namespace ICSharpCode.Decompiler.Tests.Metadata
 {
-	class WrapTests
+	[TestFixture]
+	public class WrapTests
 	{
 		[Test]
 		public void DefaultOfStructCollectionIsEmpty()
-		{
+		{ 
 			var asm = typeof(Module).Assembly;
             foreach (var type in asm.GetExportedTypes().Where(t => t.IsValueType && t.Name.EndsWith("Collection"))) {
-				var collection = (IEnumerable)Activator.CreateInstance(type);
-				foreach (var element in collection)
-					Assert.Fail("default(" + type.Name + ") is not empty");
+				dynamic collection = Activator.CreateInstance(type);
+				Assert.IsFalse(collection.GetEnumerator().MoveNext(), "default(" + type.Name + ") is not empty");
+				Assert.IsFalse(((IEnumerable)collection).GetEnumerator().MoveNext(), "default(" + type.Name + ") is not empty (non-generic enumerator)");
 			}
 		}
 	}
