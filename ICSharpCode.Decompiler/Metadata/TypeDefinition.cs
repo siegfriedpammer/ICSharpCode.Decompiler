@@ -9,15 +9,6 @@ namespace ICSharpCode.Decompiler.Metadata
 {
 	partial struct TypeDefinition
 	{
-		public ImmutableArray<TypeDefinition> GetNestedTypes()
-		{
-			var module = this.module;
-			if (module == null)
-				return default(ImmutableArray<TypeDefinition>);
-			var target = module.metadata.GetTypeDefinition(handle);
-			return target.GetNestedTypes().Select(h => new TypeDefinition(module, h)).ToImmutableArray();
-		}
-
 		public bool GetTypeLayout(out uint size, out uint packingSize)
 		{
 			if (module == null) {

@@ -27,8 +27,9 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Reflection.PortableExecutable;
-using System.Reflection.Metadata;
+using SRM = System.Reflection.Metadata;
 using System.Reflection;
+using ICSharpCode.Decompiler.Metadata;
 
 namespace ICSharpCode.Decompiler.Disassembler
 {
@@ -70,11 +71,11 @@ namespace ICSharpCode.Decompiler.Disassembler
 			internal string name;
 		}
 
-		static Dictionary<int, List<ExportedMethod>> GetExportedMethods(PEReader peReader)
+		static Dictionary<int, List<ExportedMethod>> GetExportedMethods(ModuleDefinition module)
 		{
-			if (peReader.PEHeaders.PEHeader == null)
+			if (module.PEHeaders.PEHeader == null)
 				return new Dictionary<int, List<ExportedMethod>>();
-			BlobReader exportTableReader = peReader.ReadFromRVA(peReader.PEHeaders.PEHeader.ExportTableDirectory);
+			var exportTableReader = module.ReadFromRVA(module.PEHeaders.PEHeader.ExportTableDirectory);
 			if (exportTableReader.Length < 40)
 				return new Dictionary<int, List<ExportedMethod>>();
 
@@ -83,17 +84,17 @@ namespace ICSharpCode.Decompiler.Disassembler
 
 			var methods = new Dictionary<int, List<ExportedMethod>>();
 			for (int i = 0; i < edt.NumberOfNamePointers; i++) {
-				int ordinal = peReader.ReadFromRVA((int)edt.OrdinalTableRVA + i * 2).ReadInt16() + (int)edt.OrdinalBase;
+				int ordinal = module.ReadFromRVA((int)edt.OrdinalTableRVA + i * 2).ReadInt16() + (int)edt.OrdinalBase;
 				string name = null;
 				if (edt.NamePointerRVA != 0) {
-					int namePointer = peReader.ReadFromRVA((int)edt.NamePointerRVA + i * 4).ReadInt32();
-					BlobReader nameReader = peReader.ReadFromRVA(namePointer);
+					int namePointer = module.ReadFromRVA((int)edt.NamePointerRVA + i * 4).ReadInt32();
+					BlobReader nameReader = module.ReadFromRVA(namePointer);
 					StringBuilder b = new StringBuilder();
 					while ((byte ch = nameReader.ReadByte()) != 0)
 						b.Append((char)ch);
 					name = b.ToString();
 				}
-				int token = GetTokenFromExportOrdinal(peReader, edt, ordinal);
+				int token = GetTokenFromExportOrdinal(module, edt, ordinal);
 				if (token == -1) {
 					continue;
 				}

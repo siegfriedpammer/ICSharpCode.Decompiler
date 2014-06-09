@@ -51,11 +51,12 @@
     <Compile Include="Metadata\Blob.cs" />
     <Compile Include="Metadata\Method.cs" />
     <Compile Include="Metadata\Module.cs" />
+    <Compile Include="Metadata\ModuleReference.cs" />
     <Compile Include="Metadata\TypeDefinition.cs" />
-    <Compile Include="Metadata\WrapAPI.cs">
+    <Compile Include="Metadata\WrapHandles.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>WrapAPI.tt</DependentUpon>
+      <DependentUpon>WrapHandles.tt</DependentUpon>
     </Compile>
     <Compile Include="Metadata\TypeName.cs" />
     <Compile Include="Metadata\MetadataExtensions.cs" />
@@ -64,16 +65,26 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>WrapCollections.tt</DependentUpon>
     </Compile>
+    <Compile Include="Metadata\WrapSimpleTypes.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>WrapSimpleTypes.tt</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Metadata\Wrap.tt" />
     <None Include="Metadata\WrapCollections.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>WrapCollections.cs</LastGenOutput>
     </None>
-    <None Include="Metadata\WrapAPI.tt">
+    <None Include="Metadata\WrapHandles.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>WrapAPI.cs</LastGenOutput>
+      <LastGenOutput>WrapHandles.cs</LastGenOutput>
+    </None>
+    <None Include="Metadata\WrapSimpleTypes.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>WrapSimpleTypes.cs</LastGenOutput>
     </None>
     <None Include="packages.config" />
   </ItemGroup>

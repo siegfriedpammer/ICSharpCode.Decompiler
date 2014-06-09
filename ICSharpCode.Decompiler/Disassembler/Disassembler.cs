@@ -25,7 +25,7 @@ using ICSharpCode.Decompiler.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
+using SRM = System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using System.Text;
@@ -80,24 +80,22 @@ namespace ICSharpCode.Decompiler.Disassembler
 		readonly Type typeofSystemObject;
 		readonly Type typeofSystemString;
 		readonly Type typeofSystemType;
-		readonly Dictionary<AssemblyReferenceHandle, string> referencedAssemblies = new Dictionary<AssemblyReferenceHandle, string>();
+		readonly Dictionary<AssemblyReference, string> referencedAssemblies = new Dictionary<AssemblyReference, string>();
 		//readonly HashSet<Type> typerefs;
 		//readonly List<FieldInfo> dataFields = new List<FieldInfo>();
 		readonly Dictionary<int, List<ExportedMethod>> exportedMethods;
 		//readonly string[] methodNames;
 		//readonly string[] fieldNames;
 		readonly CompatLevel compat;
-		readonly PEReader peReader;
-		readonly MetadataReader metadata;
+		readonly ModuleDefinition module;
 		readonly bool diffMode;
 		readonly Flags flags;
-		
-		internal Disassembler(PEReader peReader, MetadataReader metadata = null, CompatLevel compat = CompatLevel.None, Flags flags = Flags.None)
+
+		internal Disassembler(ModuleDefinition module, CompatLevel compat = CompatLevel.None, Flags flags = Flags.None)
 		{
-			if (peReader == null)
-				throw new ArgumentNullException("peReader");
-			this.peReader = peReader;
-			this.metadata = metadata ?? peReader.GetMetadataReader();
+			if (module == null)
+				throw new ArgumentNullException("module");
+			this.module = module;
             this.compat = compat;
 			this.diffMode = (flags & Flags.DiffMode) != 0;
 			this.flags = flags;
@@ -121,18 +119,17 @@ namespace ICSharpCode.Decompiler.Disassembler
 			typeofSystemString = (typeof(string));
 			typeofSystemType = (typeof(System.Type));
 
-			exportedMethods = GetExportedMethods(peReader);
+			exportedMethods = GetExportedMethods(module);
 
 			var names = new HashSet<string>();
 			int i = 0;
-			foreach (var assemblyReferenceHandle in metadata.AssemblyReferences) {
-				var assemblyReference = metadata.GetAssemblyReference(assemblyReferenceHandle);
-				string name = metadata.GetString(assemblyReference.Name);
+			foreach (var assemblyReference in module.AssemblyReferences) {
+				string name = assemblyReference.Name;
 				while (names.Contains(name)) {
 					name = name + "_" + i;
 				}
 				names.Add(name);
-				referencedAssemblies.Add(assemblyReferenceHandle, name);
+				referencedAssemblies.Add(assemblyReference, name);
 				i++;
 			}
 			//typerefs = new HashSet<Type>(module.__GetReferencedTypes());
@@ -149,11 +146,11 @@ namespace ICSharpCode.Decompiler.Disassembler
 			//	WriteMscorlibDirective(lw);
 			//}
 			WriteModuleManifest(lw);
-			if (metadata.IsAssembly) {
+			if (module.IsAssembly) {
 				WriteAssemblyManifest(lw);
 			}
 			WriteExportedTypes(lw);
-			if (metadata.IsAssembly) {
+			if (module.IsAssembly) {
 				WriteModules(lw);
 				WriteResources(lw);
 			}
@@ -305,9 +302,9 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 		}
 
-		private string GetAssemblyName(Handle assembly)
+		private string GetAssemblyName(SRM.Handle assembly)
 		{
-			if (assembly.HandleType == HandleType.Assembly)
+			if (assembly.HandleType == SRM.HandleType.Assembly)
 				return referencedAssemblies[(AssemblyReferenceHandle)assembly];
 			else
 				return assembly.ToHexString();
@@ -2185,7 +2182,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 		}
 
-		void WriteModuleOrAssemblyRef(LineWriter lw, Module mod)
+		void WriteModuleOrAssemblyRef(LineWriter lw, ModuleDefinition mod)
 		{
 			if (mod.Assembly != assembly) {
 				lw.Write("[{0}]", QuoteIdentifier(referencedAssemblies[mod.Assembly]));

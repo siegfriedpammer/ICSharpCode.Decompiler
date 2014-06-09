@@ -1,0 +1,104 @@
+﻿<#@ assembly name="System.Core" #>
+<#@ assembly name="System.Runtime" #>
+<#@ assembly name="Microsoft.CSharp" #>
+<#@ assembly name="$(ProjectDir)\..\packages\Microsoft.Bcl.Metadata.1.0.11-alpha\lib\portable-net45+win8\System.Reflection.Metadata.dll" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Reflection" #>
+<#@ import namespace="System.Reflection.Metadata" #>
+<#
+Assembly metadataAssembly = typeof(MetadataReader).Assembly;
+var structs = metadataAssembly.GetExportedTypes().Where(t => t.IsValueType && t.Namespace == "System.Reflection.Metadata").ToList();
+
+var exclude = new HashSet<string> {
+	"TypeDefinition.GetTypeLayout", // due to the use of out parameters
+	"BlobReader", // wrapped in Blob instead
+	"ModuleDefinition", // wrapped manually by the main ModuleDefinition class
+	"HandleType", // the wrapped API is supposed to hide handles
+	"CustomAttributeNamedArgumentKind", // we don't decode custom attributes at this layer
+	"SerializationTypeCode", // the wrapped API doesn't expose raw signatures
+	"SignatureTypeCode", // the wrapped API doesn't expose raw signatures
+};
+
+var manuallyDefinedTypeTuples = new [] {
+	new { mainType = typeof(TypeDefinition), handleType = typeof(TypeHandle), collectionType = typeof(TypeHandleCollection) },
+	new { mainType = typeof(NamespaceDefinition), handleType = typeof(NamespaceHandle), collectionType = (Type)null },
+	new { mainType = typeof(MethodImpl), handleType = typeof(MethodImplementationHandle), collectionType = typeof(MethodImplementationHandleCollection) },
+};
+var typeTuples = manuallyDefinedTypeTuples.ToList();
+typeTuples.AddRange(from mainType in structs
+					where !mainType.IsNested
+					where !mainType.Name.EndsWith("Handle", StringComparison.Ordinal)
+					where !mainType.Name.EndsWith("HandleCollection", StringComparison.Ordinal)
+					where !exclude.Contains(mainType.Name)
+					where !manuallyDefinedTypeTuples.Any(t => mainType == t.mainType)
+					let handleType = structs.FirstOrDefault(t => t.Name == mainType.Name + "Handle")
+					let collectionType = structs.FirstOrDefault(t => t.Name == mainType.Name + "HandleCollection")
+					orderby mainType.Name
+					select new { mainType, handleType, collectionType }
+				   );
+
+var handleToMainType = typeTuples.Where(t => t.handleType != null).ToDictionary(t => t.handleType, t => t.mainType);
+var collectionToMainType = typeTuples.Where(t => t.collectionType != null).ToDictionary(t => t.collectionType, t => t.mainType);
+var simpleTypes = new HashSet<Type>(typeTuples.Where(t => t.handleType == null).Select(t => t.mainType));
+
+Func<Type, string> RetType = null;
+RetType = type => {
+	Type mainType;
+	if (handleToMainType.TryGetValue(type, out mainType)) {
+		return mainType.Name;
+	} else if (collectionToMainType.TryGetValue(type, out mainType)) {
+		return mainType.Name + "Collection";
+	} else if (simpleTypes.Contains(type)) {
+		return type.Name;
+	} else if (type == typeof(StringHandle)) {
+		return "string";
+	} else if (type == typeof(BlobHandle)) {
+		return "Blob";
+	} else if (type == typeof(ModuleReferenceHandle)) {
+		return "ModuleReference";
+	} else if (type == typeof(bool)) {
+		return "bool";
+	} else if (type == typeof(int)) {
+		return "int";
+	} else if (type == typeof(ushort)) {
+		return "ushort";
+	} else if (type == typeof(byte)) {
+		return "byte";
+	} else if (type.IsGenericType && type.Name == "ImmutableArray`1") {
+		return "IEnumerable<" + RetType(type.GetGenericArguments()[0]) + ">";
+	}
+	if (type.Namespace == "System.Reflection.Metadata" && type != typeof(Handle) && type != typeof(InterfaceHandleCollection))
+		throw new Exception("Unsupported type: " + type);
+	return type.FullName;
+};
+
+Func<Type, string, string> RetVal = (type, arg) => {
+	Type mainType;
+	if (handleToMainType.TryGetValue(type, out mainType)) {
+		return string.Format("new {0}(module, {1})", mainType.Name, arg);
+	} else if (collectionToMainType.TryGetValue(type, out mainType)) {
+		return string.Format("new {0}Collection(module, {1})", mainType.Name, arg);
+	} else if (simpleTypes.Contains(type)) {
+		if (type.IsEnum)
+			return string.Format("({0}){1}", type.Name, arg);
+		else
+			return string.Format("new {0}(module, {1})", type.Name, arg);
+	} else if (type == typeof(StringHandle)) {
+		return string.Format("module.metadata.GetString({0})", arg);
+	} else if (type == typeof(BlobHandle)) {
+		return string.Format("new Blob(module, {0})", arg);
+	} else if (type == typeof(ModuleReferenceHandle)) {
+		return string.Format("new ModuleReference(module, {1})", type.Name, arg);
+	} else if (type.IsGenericType && type.Name == "ImmutableArray`1") {
+		Type elementType = type.GetGenericArguments()[0];
+		if (handleToMainType.TryGetValue(elementType, out mainType)) {
+			return string.Format("{0}.Select(new Func<SRM.{1}, {2}>(module.FromHandle))", arg, elementType.Name, mainType.Name);
+		}
+	}
+	return arg;
+};
+
+
+#>

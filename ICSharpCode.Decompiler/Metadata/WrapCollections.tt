@@ -17,15 +17,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 <#@ template debug="false" hostspecific="false" language="C#" #>
-<#@ assembly name="System.Core" #>
-<#@ assembly name="System.Runtime" #>
-<#@ assembly name="Microsoft.CSharp" #>
-<#@ assembly name="$(ProjectDir)\..\packages\Microsoft.Bcl.Metadata.1.0.11-alpha\lib\portable-net45+win8\System.Reflection.Metadata.dll" #>
-<#@ import namespace="System.Linq" #>
-<#@ import namespace="System.Text" #>
-<#@ import namespace="System.Collections.Generic" #>
-<#@ import namespace="System.Reflection" #>
-<#@ import namespace="System.Reflection.Metadata" #>
+<#@ include file="Wrap.tt" #>
 <#@ output extension=".cs" #>
 using System;
 using System.Collections;
@@ -36,17 +28,6 @@ using SRM = System.Reflection.Metadata;
 namespace ICSharpCode.Decompiler.Metadata
 {
 <#
-Assembly metadataAssembly = typeof(MetadataReader).Assembly;
-var structs = metadataAssembly.GetExportedTypes().Where(t => t.IsValueType && t.Namespace == "System.Reflection.Metadata").ToList();
-
-var typeTuples = (from mainType in structs
-				  join handleType in structs on mainType.Name + "Handle" equals handleType.Name
-				  let collectionType = structs.FirstOrDefault(t => t.Name == mainType.Name + "HandleCollection")
-				  orderby mainType.Name
-				  select new { mainType, handleType, collectionType }
-				 ).ToList();
-typeTuples.Add(new { mainType = typeof(TypeDefinition), handleType = typeof(TypeHandle), collectionType = typeof(TypeHandleCollection) });
-
 foreach (var typeTuple in typeTuples.Where(t => t.collectionType != null)) {
 	var mainType = typeTuple.mainType;
 	var handleType = typeTuple.handleType;
@@ -55,10 +36,10 @@ foreach (var typeTuple in typeTuples.Where(t => t.collectionType != null)) {
 #>
 	public partial struct <#=mainType.Name#>Collection : <#=string.Format("{0}<{1}>", hasCount ? "IReadOnlyCollection" : "IEnumerable", mainType.Name)#>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.<#=collectionType.Name#> handleCollection;
 
-		internal <#=mainType.Name#>Collection(Module module, SRM.<#=collectionType.Name#> handleCollection)
+		internal <#=mainType.Name#>Collection(ModuleDefinition module, SRM.<#=collectionType.Name#> handleCollection)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -91,13 +72,13 @@ foreach (var typeTuple in typeTuples.Where(t => t.collectionType != null)) {
 				return Enumerable.Empty<<#=mainType.Name#>>().GetEnumerator();
 			return this.handleCollection.Select(new Func<SRM.<#=handleType.Name#>, <#=mainType.Name#>>(module.FromHandle)).GetEnumerator();
 		}
-
+		
 		public struct Enumerator
 		{
-			readonly Module module;
+			readonly ModuleDefinition module;
 			SRM.<#=collectionType.Name#>.Enumerator handleEnumerator;
 
-			internal Enumerator(Module module, SRM.<#=collectionType.Name#>.Enumerator handleEnumerator)
+			internal Enumerator(ModuleDefinition module, SRM.<#=collectionType.Name#>.Enumerator handleEnumerator)
 			{
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;

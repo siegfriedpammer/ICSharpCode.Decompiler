@@ -17,16 +17,361 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Diagnostics;
 using SRM = System.Reflection.Metadata;
 namespace ICSharpCode.Decompiler.Metadata
 {
+	public partial struct TypeDefinition : IEquatable<TypeDefinition>
+	{
+		readonly ModuleDefinition module;
+		SRM.TypeHandle handle;
+
+		internal TypeDefinition(ModuleDefinition module, SRM.TypeHandle handle)
+		{
+			Debug.Assert(module != null);
+			this.module = module;
+			this.handle = handle;
+		}
+
+		/// <summary>
+		/// Gets the module containing this TypeDefinition.
+		/// </summary>
+		public ModuleDefinition ContainingModule {
+			get { return module; }
+		}
+
+		public bool IsNil {
+			get { return handle.IsNil; }
+		}
+
+		/// <summary>
+		/// Gets the metadata token associated with this TypeDefinition.
+		/// </summary>
+		public int MetadataToken {
+			get { 
+				if (handle.IsNil)
+					return 0;
+				return SRM.Ecma335.MetadataTokens.GetToken(module.metadata, handle); 
+			}
+		}
+
+		public System.Reflection.TypeAttributes Attributes {
+			get {
+				if (handle.IsNil)
+					return default(System.Reflection.TypeAttributes);
+				var target = module.metadata.GetTypeDefinition(handle);
+				return target.Attributes;
+			}
+		}
+		public string Name {
+			get {
+				if (handle.IsNil)
+					return default(string);
+				var target = module.metadata.GetTypeDefinition(handle);
+				return module.metadata.GetString(target.Name);
+			}
+		}
+		public NamespaceDefinition Namespace {
+			get {
+				if (handle.IsNil)
+					return default(NamespaceDefinition);
+				var target = module.metadata.GetTypeDefinition(handle);
+				return new NamespaceDefinition(module, target.Namespace);
+			}
+		}
+		public System.Reflection.Metadata.Handle BaseType {
+			get {
+				if (handle.IsNil)
+					return default(System.Reflection.Metadata.Handle);
+				var target = module.metadata.GetTypeDefinition(handle);
+				return target.BaseType;
+			}
+		}
+
+		public TypeDefinition GetDeclaringType()
+		{
+			if (handle.IsNil)
+				return default(TypeDefinition);
+			var target = module.metadata.GetTypeDefinition(handle);
+			return new TypeDefinition(module, target.GetDeclaringType());
+		}
+		public GenericParameterCollection GetGenericParameters()
+		{
+			if (handle.IsNil)
+				return default(GenericParameterCollection);
+			var target = module.metadata.GetTypeDefinition(handle);
+			return new GenericParameterCollection(module, target.GetGenericParameters());
+		}
+		public MethodCollection GetMethods()
+		{
+			if (handle.IsNil)
+				return default(MethodCollection);
+			var target = module.metadata.GetTypeDefinition(handle);
+			return new MethodCollection(module, target.GetMethods());
+		}
+		public FieldCollection GetFields()
+		{
+			if (handle.IsNil)
+				return default(FieldCollection);
+			var target = module.metadata.GetTypeDefinition(handle);
+			return new FieldCollection(module, target.GetFields());
+		}
+		public PropertyCollection GetProperties()
+		{
+			if (handle.IsNil)
+				return default(PropertyCollection);
+			var target = module.metadata.GetTypeDefinition(handle);
+			return new PropertyCollection(module, target.GetProperties());
+		}
+		public EventCollection GetEvents()
+		{
+			if (handle.IsNil)
+				return default(EventCollection);
+			var target = module.metadata.GetTypeDefinition(handle);
+			return new EventCollection(module, target.GetEvents());
+		}
+		public IEnumerable<TypeDefinition> GetNestedTypes()
+		{
+			if (handle.IsNil)
+				return default(IEnumerable<TypeDefinition>);
+			var target = module.metadata.GetTypeDefinition(handle);
+			return target.GetNestedTypes().Select(new Func<SRM.TypeHandle, TypeDefinition>(module.FromHandle));
+		}
+		public MethodImplCollection GetMethodImplementations()
+		{
+			if (handle.IsNil)
+				return default(MethodImplCollection);
+			var target = module.metadata.GetTypeDefinition(handle);
+			return new MethodImplCollection(module, target.GetMethodImplementations());
+		}
+		public System.Reflection.Metadata.InterfaceHandleCollection GetImplementedInterfaces()
+		{
+			if (handle.IsNil)
+				return default(System.Reflection.Metadata.InterfaceHandleCollection);
+			var target = module.metadata.GetTypeDefinition(handle);
+			return target.GetImplementedInterfaces();
+		}
+		public CustomAttributeCollection GetCustomAttributes()
+		{
+			if (handle.IsNil)
+				return default(CustomAttributeCollection);
+			var target = module.metadata.GetTypeDefinition(handle);
+			return new CustomAttributeCollection(module, target.GetCustomAttributes());
+		}
+		public DeclarativeSecurityAttributeCollection GetDeclarativeSecurityAttributes()
+		{
+			if (handle.IsNil)
+				return default(DeclarativeSecurityAttributeCollection);
+			var target = module.metadata.GetTypeDefinition(handle);
+			return new DeclarativeSecurityAttributeCollection(module, target.GetDeclarativeSecurityAttributes());
+		}
+
+		public override int GetHashCode()
+		{
+			if (module != null)
+				return module.GetHashCode() ^ handle.GetHashCode();
+			else
+				return 0;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is TypeDefinition && Equals((TypeDefinition)obj);
+		}
+
+		public bool Equals(TypeDefinition other)
+		{
+			return module == other.module && handle == other.handle;
+		}
+	}
+	public partial struct NamespaceDefinition : IEquatable<NamespaceDefinition>
+	{
+		readonly ModuleDefinition module;
+		SRM.NamespaceHandle handle;
+
+		internal NamespaceDefinition(ModuleDefinition module, SRM.NamespaceHandle handle)
+		{
+			Debug.Assert(module != null);
+			this.module = module;
+			this.handle = handle;
+		}
+
+		/// <summary>
+		/// Gets the module containing this NamespaceDefinition.
+		/// </summary>
+		public ModuleDefinition ContainingModule {
+			get { return module; }
+		}
+
+		public bool IsNil {
+			get { return handle.IsNil; }
+		}
+
+		/// <summary>
+		/// Gets the metadata token associated with this NamespaceDefinition.
+		/// </summary>
+		public int MetadataToken {
+			get { 
+				if (handle.IsNil)
+					return 0;
+				return SRM.Ecma335.MetadataTokens.GetToken(module.metadata, handle); 
+			}
+		}
+
+		public string Name {
+			get {
+				if (handle.IsNil)
+					return default(string);
+				var target = module.metadata.GetNamespaceDefinition(handle);
+				return module.metadata.GetString(target.Name);
+			}
+		}
+		public NamespaceDefinition Parent {
+			get {
+				if (handle.IsNil)
+					return default(NamespaceDefinition);
+				var target = module.metadata.GetNamespaceDefinition(handle);
+				return new NamespaceDefinition(module, target.Parent);
+			}
+		}
+		public IEnumerable<NamespaceDefinition> NamespaceDefinitions {
+			get {
+				if (handle.IsNil)
+					return default(IEnumerable<NamespaceDefinition>);
+				var target = module.metadata.GetNamespaceDefinition(handle);
+				return target.NamespaceDefinitions.Select(new Func<SRM.NamespaceHandle, NamespaceDefinition>(module.FromHandle));
+			}
+		}
+		public IEnumerable<TypeDefinition> TypeDefinitions {
+			get {
+				if (handle.IsNil)
+					return default(IEnumerable<TypeDefinition>);
+				var target = module.metadata.GetNamespaceDefinition(handle);
+				return target.TypeDefinitions.Select(new Func<SRM.TypeHandle, TypeDefinition>(module.FromHandle));
+			}
+		}
+		public IEnumerable<TypeForwarder> TypeForwarders {
+			get {
+				if (handle.IsNil)
+					return default(IEnumerable<TypeForwarder>);
+				var target = module.metadata.GetNamespaceDefinition(handle);
+				return target.TypeForwarders.Select(new Func<SRM.TypeForwarderHandle, TypeForwarder>(module.FromHandle));
+			}
+		}
+
+
+		public override int GetHashCode()
+		{
+			if (module != null)
+				return module.GetHashCode() ^ handle.GetHashCode();
+			else
+				return 0;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is NamespaceDefinition && Equals((NamespaceDefinition)obj);
+		}
+
+		public bool Equals(NamespaceDefinition other)
+		{
+			return module == other.module && handle == other.handle;
+		}
+	}
+	public partial struct MethodImpl : IEquatable<MethodImpl>
+	{
+		readonly ModuleDefinition module;
+		SRM.MethodImplementationHandle handle;
+
+		internal MethodImpl(ModuleDefinition module, SRM.MethodImplementationHandle handle)
+		{
+			Debug.Assert(module != null);
+			this.module = module;
+			this.handle = handle;
+		}
+
+		/// <summary>
+		/// Gets the module containing this MethodImpl.
+		/// </summary>
+		public ModuleDefinition ContainingModule {
+			get { return module; }
+		}
+
+		public bool IsNil {
+			get { return handle.IsNil; }
+		}
+
+		/// <summary>
+		/// Gets the metadata token associated with this MethodImpl.
+		/// </summary>
+		public int MetadataToken {
+			get { 
+				if (handle.IsNil)
+					return 0;
+				return SRM.Ecma335.MetadataTokens.GetToken(module.metadata, handle); 
+			}
+		}
+
+		public TypeDefinition Type {
+			get {
+				if (handle.IsNil)
+					return default(TypeDefinition);
+				var target = module.metadata.GetMethodImpl(handle);
+				return new TypeDefinition(module, target.Type);
+			}
+		}
+		public System.Reflection.Metadata.Handle MethodBody {
+			get {
+				if (handle.IsNil)
+					return default(System.Reflection.Metadata.Handle);
+				var target = module.metadata.GetMethodImpl(handle);
+				return target.MethodBody;
+			}
+		}
+		public System.Reflection.Metadata.Handle MethodDeclaration {
+			get {
+				if (handle.IsNil)
+					return default(System.Reflection.Metadata.Handle);
+				var target = module.metadata.GetMethodImpl(handle);
+				return target.MethodDeclaration;
+			}
+		}
+
+		public CustomAttributeCollection GetCustomAttributes()
+		{
+			if (handle.IsNil)
+				return default(CustomAttributeCollection);
+			var target = module.metadata.GetMethodImpl(handle);
+			return new CustomAttributeCollection(module, target.GetCustomAttributes());
+		}
+
+		public override int GetHashCode()
+		{
+			if (module != null)
+				return module.GetHashCode() ^ handle.GetHashCode();
+			else
+				return 0;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is MethodImpl && Equals((MethodImpl)obj);
+		}
+
+		public bool Equals(MethodImpl other)
+		{
+			return module == other.module && handle == other.handle;
+		}
+	}
 	public partial struct AssemblyFile : IEquatable<AssemblyFile>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.AssemblyFileHandle handle;
 
-		internal AssemblyFile(Module module, SRM.AssemblyFileHandle handle)
+		internal AssemblyFile(ModuleDefinition module, SRM.AssemblyFileHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -36,7 +381,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this AssemblyFile.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -108,10 +453,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct AssemblyReference : IEquatable<AssemblyReference>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.AssemblyReferenceHandle handle;
 
-		internal AssemblyReference(Module module, SRM.AssemblyReferenceHandle handle)
+		internal AssemblyReference(ModuleDefinition module, SRM.AssemblyReferenceHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -121,7 +466,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this AssemblyReference.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -217,10 +562,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct Constant : IEquatable<Constant>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.ConstantHandle handle;
 
-		internal Constant(Module module, SRM.ConstantHandle handle)
+		internal Constant(ModuleDefinition module, SRM.ConstantHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -230,7 +575,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this Constant.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -249,12 +594,12 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 
-		public System.Reflection.Metadata.ConstantType Type {
+		public ConstantType Type {
 			get {
 				if (handle.IsNil)
-					return default(System.Reflection.Metadata.ConstantType);
+					return default(ConstantType);
 				var target = module.metadata.GetConstant(handle);
-				return target.Type;
+				return (ConstantType)target.Type;
 			}
 		}
 		public Blob Value {
@@ -302,10 +647,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct CustomAttribute : IEquatable<CustomAttribute>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.CustomAttributeHandle handle;
 
-		internal CustomAttribute(Module module, SRM.CustomAttributeHandle handle)
+		internal CustomAttribute(ModuleDefinition module, SRM.CustomAttributeHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -315,7 +660,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this CustomAttribute.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -380,10 +725,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct DeclarativeSecurityAttribute : IEquatable<DeclarativeSecurityAttribute>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.DeclarativeSecurityAttributeHandle handle;
 
-		internal DeclarativeSecurityAttribute(Module module, SRM.DeclarativeSecurityAttributeHandle handle)
+		internal DeclarativeSecurityAttribute(ModuleDefinition module, SRM.DeclarativeSecurityAttributeHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -393,7 +738,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this DeclarativeSecurityAttribute.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -458,10 +803,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct Event : IEquatable<Event>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.EventHandle handle;
 
-		internal Event(Module module, SRM.EventHandle handle)
+		internal Event(ModuleDefinition module, SRM.EventHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -471,7 +816,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this Event.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -522,12 +867,12 @@ namespace ICSharpCode.Decompiler.Metadata
 			var target = module.metadata.GetEvent(handle);
 			return new CustomAttributeCollection(module, target.GetCustomAttributes());
 		}
-		public System.Reflection.Metadata.EventMethodHandles GetAssociatedMethods()
+		public EventMethodHandles GetAssociatedMethods()
 		{
 			if (handle.IsNil)
-				return default(System.Reflection.Metadata.EventMethodHandles);
+				return default(EventMethodHandles);
 			var target = module.metadata.GetEvent(handle);
-			return target.GetAssociatedMethods();
+			return new EventMethodHandles(module, target.GetAssociatedMethods());
 		}
 
 		public override int GetHashCode()
@@ -550,10 +895,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct Field : IEquatable<Field>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.FieldHandle handle;
 
-		internal Field(Module module, SRM.FieldHandle handle)
+		internal Field(ModuleDefinition module, SRM.FieldHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -563,7 +908,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this Field.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -663,10 +1008,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct GenericParameter : IEquatable<GenericParameter>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.GenericParameterHandle handle;
 
-		internal GenericParameter(Module module, SRM.GenericParameterHandle handle)
+		internal GenericParameter(ModuleDefinition module, SRM.GenericParameterHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -676,7 +1021,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this GenericParameter.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -763,10 +1108,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct GenericParameterConstraint : IEquatable<GenericParameterConstraint>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.GenericParameterConstraintHandle handle;
 
-		internal GenericParameterConstraint(Module module, SRM.GenericParameterConstraintHandle handle)
+		internal GenericParameterConstraint(ModuleDefinition module, SRM.GenericParameterConstraintHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -776,7 +1121,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this GenericParameterConstraint.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -840,10 +1185,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct ManifestResource : IEquatable<ManifestResource>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.ManifestResourceHandle handle;
 
-		internal ManifestResource(Module module, SRM.ManifestResourceHandle handle)
+		internal ManifestResource(ModuleDefinition module, SRM.ManifestResourceHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -853,7 +1198,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this ManifestResource.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -933,10 +1278,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct MemberReference : IEquatable<MemberReference>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.MemberReferenceHandle handle;
 
-		internal MemberReference(Module module, SRM.MemberReferenceHandle handle)
+		internal MemberReference(ModuleDefinition module, SRM.MemberReferenceHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -946,7 +1291,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this MemberReference.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -1018,10 +1363,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct Method : IEquatable<Method>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.MethodHandle handle;
 
-		internal Method(Module module, SRM.MethodHandle handle)
+		internal Method(ModuleDefinition module, SRM.MethodHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -1031,7 +1376,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this Method.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -1105,12 +1450,12 @@ namespace ICSharpCode.Decompiler.Metadata
 			var target = module.metadata.GetMethod(handle);
 			return new GenericParameterCollection(module, target.GetGenericParameters());
 		}
-		public System.Reflection.Metadata.MethodImport GetImport()
+		public MethodImport GetImport()
 		{
 			if (handle.IsNil)
-				return default(System.Reflection.Metadata.MethodImport);
+				return default(MethodImport);
 			var target = module.metadata.GetMethod(handle);
-			return target.GetImport();
+			return new MethodImport(module, target.GetImport());
 		}
 		public CustomAttributeCollection GetCustomAttributes()
 		{
@@ -1147,10 +1492,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct MethodSpecification : IEquatable<MethodSpecification>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.MethodSpecificationHandle handle;
 
-		internal MethodSpecification(Module module, SRM.MethodSpecificationHandle handle)
+		internal MethodSpecification(ModuleDefinition module, SRM.MethodSpecificationHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -1160,7 +1505,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this MethodSpecification.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -1224,10 +1569,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct Parameter : IEquatable<Parameter>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.ParameterHandle handle;
 
-		internal Parameter(Module module, SRM.ParameterHandle handle)
+		internal Parameter(ModuleDefinition module, SRM.ParameterHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -1237,7 +1582,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this Parameter.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -1323,10 +1668,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct Property : IEquatable<Property>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.PropertyHandle handle;
 
-		internal Property(Module module, SRM.PropertyHandle handle)
+		internal Property(ModuleDefinition module, SRM.PropertyHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -1336,7 +1681,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this Property.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -1394,12 +1739,12 @@ namespace ICSharpCode.Decompiler.Metadata
 			var target = module.metadata.GetProperty(handle);
 			return new CustomAttributeCollection(module, target.GetCustomAttributes());
 		}
-		public System.Reflection.Metadata.PropertyMethodHandles GetAssociatedMethods()
+		public PropertyMethodHandles GetAssociatedMethods()
 		{
 			if (handle.IsNil)
-				return default(System.Reflection.Metadata.PropertyMethodHandles);
+				return default(PropertyMethodHandles);
 			var target = module.metadata.GetProperty(handle);
-			return target.GetAssociatedMethods();
+			return new PropertyMethodHandles(module, target.GetAssociatedMethods());
 		}
 
 		public override int GetHashCode()
@@ -1422,10 +1767,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct TypeForwarder : IEquatable<TypeForwarder>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.TypeForwarderHandle handle;
 
-		internal TypeForwarder(Module module, SRM.TypeForwarderHandle handle)
+		internal TypeForwarder(ModuleDefinition module, SRM.TypeForwarderHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -1435,7 +1780,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this TypeForwarder.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -1462,12 +1807,12 @@ namespace ICSharpCode.Decompiler.Metadata
 				return module.metadata.GetString(target.Name);
 			}
 		}
-		public string Namespace {
+		public NamespaceDefinition Namespace {
 			get {
 				if (handle.IsNil)
-					return default(string);
+					return default(NamespaceDefinition);
 				var target = module.metadata.GetTypeForwarder(handle);
-				return module.metadata.GetString(target.Namespace);
+				return new NamespaceDefinition(module, target.Namespace);
 			}
 		}
 		public AssemblyReference Implementation {
@@ -1500,10 +1845,10 @@ namespace ICSharpCode.Decompiler.Metadata
 	}
 	public partial struct TypeReference : IEquatable<TypeReference>
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		SRM.TypeReferenceHandle handle;
 
-		internal TypeReference(Module module, SRM.TypeReferenceHandle handle)
+		internal TypeReference(ModuleDefinition module, SRM.TypeReferenceHandle handle)
 		{
 			Debug.Assert(module != null);
 			this.module = module;
@@ -1513,7 +1858,7 @@ namespace ICSharpCode.Decompiler.Metadata
 		/// <summary>
 		/// Gets the module containing this TypeReference.
 		/// </summary>
-		public Module ContainingModule {
+		public ModuleDefinition ContainingModule {
 			get { return module; }
 		}
 
@@ -1576,165 +1921,27 @@ namespace ICSharpCode.Decompiler.Metadata
 			return module == other.module && handle == other.handle;
 		}
 	}
-	public partial struct TypeDefinition : IEquatable<TypeDefinition>
+
+	partial class ModuleDefinition
 	{
-		readonly Module module;
-		SRM.TypeHandle handle;
-
-		internal TypeDefinition(Module module, SRM.TypeHandle handle)
-		{
-			Debug.Assert(module != null);
-			this.module = module;
-			this.handle = handle;
-		}
-
-		/// <summary>
-		/// Gets the module containing this TypeDefinition.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
-		}
-
-		public bool IsNil {
-			get { return handle.IsNil; }
-		}
-
-		/// <summary>
-		/// Gets the metadata token associated with this TypeDefinition.
-		/// </summary>
-		public int MetadataToken {
-			get { 
-				if (handle.IsNil)
-					return 0;
-				return SRM.Ecma335.MetadataTokens.GetToken(module.metadata, handle); 
-			}
-		}
-
-		public System.Reflection.TypeAttributes Attributes {
-			get {
-				if (handle.IsNil)
-					return default(System.Reflection.TypeAttributes);
-				var target = module.metadata.GetTypeDefinition(handle);
-				return target.Attributes;
-			}
-		}
-		public string Name {
-			get {
-				if (handle.IsNil)
-					return default(string);
-				var target = module.metadata.GetTypeDefinition(handle);
-				return module.metadata.GetString(target.Name);
-			}
-		}
-		public string Namespace {
-			get {
-				if (handle.IsNil)
-					return default(string);
-				var target = module.metadata.GetTypeDefinition(handle);
-				return module.metadata.GetString(target.Namespace);
-			}
-		}
-		public System.Reflection.Metadata.Handle BaseType {
-			get {
-				if (handle.IsNil)
-					return default(System.Reflection.Metadata.Handle);
-				var target = module.metadata.GetTypeDefinition(handle);
-				return target.BaseType;
-			}
-		}
-
-		public TypeDefinition GetDeclaringType()
+		public TypeDefinition FromHandle(SRM.TypeHandle handle)
 		{
 			if (handle.IsNil)
-				return default(TypeDefinition);
-			var target = module.metadata.GetTypeDefinition(handle);
-			return new TypeDefinition(module, target.GetDeclaringType());
+				throw new ArgumentNullException("handle");
+			return new TypeDefinition(this, handle);
 		}
-		public GenericParameterCollection GetGenericParameters()
+		public NamespaceDefinition FromHandle(SRM.NamespaceHandle handle)
 		{
 			if (handle.IsNil)
-				return default(GenericParameterCollection);
-			var target = module.metadata.GetTypeDefinition(handle);
-			return new GenericParameterCollection(module, target.GetGenericParameters());
+				throw new ArgumentNullException("handle");
+			return new NamespaceDefinition(this, handle);
 		}
-		public MethodCollection GetMethods()
+		public MethodImpl FromHandle(SRM.MethodImplementationHandle handle)
 		{
 			if (handle.IsNil)
-				return default(MethodCollection);
-			var target = module.metadata.GetTypeDefinition(handle);
-			return new MethodCollection(module, target.GetMethods());
+				throw new ArgumentNullException("handle");
+			return new MethodImpl(this, handle);
 		}
-		public FieldCollection GetFields()
-		{
-			if (handle.IsNil)
-				return default(FieldCollection);
-			var target = module.metadata.GetTypeDefinition(handle);
-			return new FieldCollection(module, target.GetFields());
-		}
-		public PropertyCollection GetProperties()
-		{
-			if (handle.IsNil)
-				return default(PropertyCollection);
-			var target = module.metadata.GetTypeDefinition(handle);
-			return new PropertyCollection(module, target.GetProperties());
-		}
-		public EventCollection GetEvents()
-		{
-			if (handle.IsNil)
-				return default(EventCollection);
-			var target = module.metadata.GetTypeDefinition(handle);
-			return new EventCollection(module, target.GetEvents());
-		}
-		public System.Reflection.Metadata.MethodImplementationHandleCollection GetMethodImplementations()
-		{
-			if (handle.IsNil)
-				return default(System.Reflection.Metadata.MethodImplementationHandleCollection);
-			var target = module.metadata.GetTypeDefinition(handle);
-			return target.GetMethodImplementations();
-		}
-		public System.Reflection.Metadata.InterfaceHandleCollection GetImplementedInterfaces()
-		{
-			if (handle.IsNil)
-				return default(System.Reflection.Metadata.InterfaceHandleCollection);
-			var target = module.metadata.GetTypeDefinition(handle);
-			return target.GetImplementedInterfaces();
-		}
-		public CustomAttributeCollection GetCustomAttributes()
-		{
-			if (handle.IsNil)
-				return default(CustomAttributeCollection);
-			var target = module.metadata.GetTypeDefinition(handle);
-			return new CustomAttributeCollection(module, target.GetCustomAttributes());
-		}
-		public DeclarativeSecurityAttributeCollection GetDeclarativeSecurityAttributes()
-		{
-			if (handle.IsNil)
-				return default(DeclarativeSecurityAttributeCollection);
-			var target = module.metadata.GetTypeDefinition(handle);
-			return new DeclarativeSecurityAttributeCollection(module, target.GetDeclarativeSecurityAttributes());
-		}
-
-		public override int GetHashCode()
-		{
-			if (module != null)
-				return module.GetHashCode() ^ handle.GetHashCode();
-			else
-				return 0;
-		}
-
-		public override bool Equals(object obj)
-		{
-			return obj is TypeDefinition && Equals((TypeDefinition)obj);
-		}
-
-		public bool Equals(TypeDefinition other)
-		{
-			return module == other.module && handle == other.handle;
-		}
-	}
-
-	partial class Module
-	{
 		public AssemblyFile FromHandle(SRM.AssemblyFileHandle handle)
 		{
 			if (handle.IsNil)
@@ -1836,12 +2043,6 @@ namespace ICSharpCode.Decompiler.Metadata
 			if (handle.IsNil)
 				throw new ArgumentNullException("handle");
 			return new TypeReference(this, handle);
-		}
-		public TypeDefinition FromHandle(SRM.TypeHandle handle)
-		{
-			if (handle.IsNil)
-				throw new ArgumentNullException("handle");
-			return new TypeDefinition(this, handle);
 		}
 	}
 }

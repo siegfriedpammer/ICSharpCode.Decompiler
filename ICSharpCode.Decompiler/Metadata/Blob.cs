@@ -9,10 +9,10 @@ namespace ICSharpCode.Decompiler.Metadata
 {
 	public struct Blob
 	{
-		readonly Module module;
+		readonly ModuleDefinition module;
 		readonly BlobHandle handle;
 
-		public Blob(Module module, BlobHandle handle)
+		public Blob(ModuleDefinition module, BlobHandle handle)
 		{
 			this.module = module;
 			this.handle = handle;
