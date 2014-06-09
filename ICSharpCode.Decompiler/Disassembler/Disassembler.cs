@@ -279,8 +279,8 @@ namespace ICSharpCode.Decompiler.Disassembler
 
 		void WriteExportedTypes(LineWriter lw)
 		{
-			foreach (var exportedType in metadata.GetExportedTypes()) {
-				var typeName = metadata.GetTypeName(exportedType);
+			foreach (var exportedType in module.metadata.GetExportedTypes()) {
+				var typeName = module.metadata.GetTypeName(exportedType);
 				lw.Write(".class extern ");
 				if (typeName.IsNested) {
 					lw.Write("forwarder ");
@@ -304,30 +304,29 @@ namespace ICSharpCode.Decompiler.Disassembler
 
 		private string GetAssemblyName(SRM.Handle assembly)
 		{
-			if (assembly.HandleType == SRM.HandleType.Assembly)
-				return referencedAssemblies[(AssemblyReferenceHandle)assembly];
-			else
+			//if (assembly.HandleType == SRM.HandleType.Assembly)
+				//return referencedAssemblies[(AssemblyReferenceHandle)assembly];
+			//else
 				return assembly.ToHexString();
 		}
 
 		void WriteGlobalMethods(LineWriter lw)
 		{
-			TypeDefinition moduleTypeDef = metadata.GetModuleType();
+			TypeDefinition moduleTypeDef = module.ModuleType;
+			var methods = moduleTypeDef.GetMethods();
 			var cctor = moduleTypeDef.GetTypeInitializer();
-			MethodInfo[] methods = module.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
-			ConstructorInfo cctor = module.__ModuleInitializer;
-			if (methods.Length != 0 || cctor != null) {
+			if (methods.Count != 0 || !cctor.IsNil) {
 				lw.WriteLine();
 				lw.WriteLine("// ================== GLOBAL METHODS =========================");
 				lw.WriteLine();
 				foreach (var method in methods) {
-					if (cctor != null && method.MetadataToken > cctor.MetadataToken) {
+					if (!cctor.IsNil && method.MetadataToken > cctor.MetadataToken) {
 						WriteMethod(lw, cctor);
-						cctor = null;
+						cctor = default(Method);
 					}
 					WriteMethod(lw, method);
 				}
-				if (cctor != null) {
+				if (!cctor.IsNil) {
 					WriteMethod(lw, cctor);
 				}
 				lw.WriteLine();
@@ -922,7 +921,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 		}
 
-		void WriteMethod(LineWriter lw, MethodBase method)
+		void WriteMethod(LineWriter lw, Method method)
 		{
 			int level0 = lw.Column;
 			lw.Write(".method ");

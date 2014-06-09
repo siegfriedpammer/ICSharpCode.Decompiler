@@ -49,8 +49,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Metadata\Blob.cs" />
+    <Compile Include="Metadata\MetadataOptions.cs" />
     <Compile Include="Metadata\Method.cs" />
-    <Compile Include="Metadata\Module.cs" />
+    <Compile Include="Metadata\ModuleDefinition.cs" />
     <Compile Include="Metadata\ModuleReference.cs" />
     <Compile Include="Metadata\TypeDefinition.cs" />
     <Compile Include="Metadata\WrapHandles.cs">

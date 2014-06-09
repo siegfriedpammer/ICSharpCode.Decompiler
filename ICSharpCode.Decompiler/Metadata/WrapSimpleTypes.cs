@@ -271,9 +271,93 @@ namespace ICSharpCode.Decompiler.Metadata
 		WindowsMetadata = SRM.MetadataKind.WindowsMetadata,
 		ManagedWindowsMetadata = SRM.MetadataKind.ManagedWindowsMetadata,
 	}
-	public enum MetadataReaderOptions : int
+
+	partial class ModuleDefinition
 	{
-		None = SRM.MetadataReaderOptions.None,
-		ApplyWindowsRuntimeProjections = SRM.MetadataReaderOptions.ApplyWindowsRuntimeProjections,
+		public System.String MetadataVersion {
+			get {
+				return metadata.MetadataVersion;
+			}
+		}
+		public MetadataKind MetadataKind {
+			get {
+				return (MetadataKind)metadata.MetadataKind;
+			}
+		}
+		public bool IsAssembly {
+			get {
+				return metadata.IsAssembly;
+			}
+		}
+		public AssemblyReferenceCollection AssemblyReferences {
+			get {
+				return new AssemblyReferenceCollection(module, metadata.AssemblyReferences);
+			}
+		}
+		public TypeDefinitionCollection TypeDefinitions {
+			get {
+				return new TypeDefinitionCollection(module, metadata.TypeDefinitions);
+			}
+		}
+		public TypeReferenceCollection TypeReferences {
+			get {
+				return new TypeReferenceCollection(module, metadata.TypeReferences);
+			}
+		}
+		public CustomAttributeCollection CustomAttributes {
+			get {
+				return new CustomAttributeCollection(module, metadata.CustomAttributes);
+			}
+		}
+		public DeclarativeSecurityAttributeCollection DeclarativeSecurityAttributes {
+			get {
+				return new DeclarativeSecurityAttributeCollection(module, metadata.DeclarativeSecurityAttributes);
+			}
+		}
+		public MemberReferenceCollection MemberReferences {
+			get {
+				return new MemberReferenceCollection(module, metadata.MemberReferences);
+			}
+		}
+		public ManifestResourceCollection ManifestResources {
+			get {
+				return new ManifestResourceCollection(module, metadata.ManifestResources);
+			}
+		}
+		public AssemblyFileCollection AssemblyFiles {
+			get {
+				return new AssemblyFileCollection(module, metadata.AssemblyFiles);
+			}
+		}
+		public TypeForwarderCollection TypeForwarders {
+			get {
+				return new TypeForwarderCollection(module, metadata.TypeForwarders);
+			}
+		}
+		public MethodCollection MethodDefinitions {
+			get {
+				return new MethodCollection(module, metadata.MethodDefinitions);
+			}
+		}
+		public FieldCollection FieldDefinitions {
+			get {
+				return new FieldCollection(module, metadata.FieldDefinitions);
+			}
+		}
+		public EventCollection EventDefinitions {
+			get {
+				return new EventCollection(module, metadata.EventDefinitions);
+			}
+		}
+		public PropertyCollection PropertyDefinitions {
+			get {
+				return new PropertyCollection(module, metadata.PropertyDefinitions);
+			}
+		}
+
+		public AssemblyDefinition GetAssemblyDefinition()
+		{
+			return new AssemblyDefinition(module, metadata.GetAssemblyDefinition());
+		}
 	}
 }

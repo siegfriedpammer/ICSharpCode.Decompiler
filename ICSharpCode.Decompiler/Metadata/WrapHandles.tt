@@ -82,7 +82,7 @@ foreach (var typeTuple in typeTuples.Where(t => t.handleType != null)) {
 		}
 <#  } #>
 
-<#	foreach (var propertyInfo in mainType.GetProperties()) { #>
+<#	foreach (var propertyInfo in GetWrappableProperties(mainType)) { #>
 		public <#=RetType(propertyInfo.PropertyType)#> <#=propertyInfo.Name#> {
 			get {
 				if (handle.IsNil)
@@ -93,10 +93,7 @@ foreach (var typeTuple in typeTuples.Where(t => t.handleType != null)) {
 		}
 <#	} // end foreach (propertyInfo in mainType.GetProperties()) #>
 
-<#	IEnumerable<MethodInfo> methods = mainType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-	methods = methods.Where(m => !m.Name.StartsWith("get_", StringComparison.Ordinal));
-	methods = methods.Where(m => !exclude.Contains(mainType.Name + "." + m.Name));
-	foreach (var methodInfo in methods) { #>
+<#	foreach (var methodInfo in GetWrappableMethods(mainType)) { #>
 		public <#=RetType(methodInfo.ReturnType)#> <#=methodInfo.Name#>()
 		{
 			if (handle.IsNil)

@@ -14,11 +14,15 @@ var structs = metadataAssembly.GetExportedTypes().Where(t => t.IsValueType && t.
 var exclude = new HashSet<string> {
 	"TypeDefinition.GetTypeLayout", // due to the use of out parameters
 	"BlobReader", // wrapped in Blob instead
-	"ModuleDefinition", // wrapped manually by the main ModuleDefinition class
+	"ModuleDefinition", // wrapped by the main ModuleDefinition class
+	"MetadataReader.GetModuleDefinition", // wrapped manually by the main ModuleDefinition class
+	"MetadataReader.GetRootNamespaceDefinition", // wrapping without handle not supported
 	"HandleType", // the wrapped API is supposed to hide handles
 	"CustomAttributeNamedArgumentKind", // we don't decode custom attributes at this layer
 	"SerializationTypeCode", // the wrapped API doesn't expose raw signatures
 	"SignatureTypeCode", // the wrapped API doesn't expose raw signatures
+	"MetadataReaderOptions", // we are using MetadataOptions instead
+	"MetadataReader.Options", // we are using MetadataOptions instead
 };
 
 var manuallyDefinedTypeTuples = new [] {
@@ -100,5 +104,18 @@ Func<Type, string, string> RetVal = (type, arg) => {
 	return arg;
 };
 
+Func<Type, MethodInfo[]> GetWrappableMethods = type => {
+	IEnumerable<MethodInfo> methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+	methods = methods.Where(m => !m.Name.StartsWith("get_", StringComparison.Ordinal));
+	methods = methods.Where(m => !exclude.Contains(type.Name + "." + m.Name));
+	methods = methods.Where(m => m.GetParameters().Length == 0);
+	return methods.ToArray();
+};
+
+Func<Type, PropertyInfo[]> GetWrappableProperties = type => {
+	IEnumerable<PropertyInfo> properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+	properties = properties.Where(m => !exclude.Contains(type.Name + "." + m.Name));
+	return properties.ToArray();
+};
 
 #>

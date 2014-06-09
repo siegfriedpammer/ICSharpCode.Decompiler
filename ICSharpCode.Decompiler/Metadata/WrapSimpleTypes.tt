@@ -47,23 +47,20 @@ foreach (var typeTuple in typeTuples.Where(t => t.handleType == null && !t.mainT
 			get { return module; }
 		}
 
-<#	foreach (var propertyInfo in mainType.GetProperties()) { #>
+<#	foreach (var propertyInfo in GetWrappableProperties(mainType)) { #>
 		public <#=RetType(propertyInfo.PropertyType)#> <#=propertyInfo.Name#> {
 			get {
 				return <#=RetVal(propertyInfo.PropertyType, "wrapped." + propertyInfo.Name)#>;
 			}
 		}
-<#	} // end foreach (propertyInfo in mainType.GetProperties()) #>
+<#	} // end foreach propertyInfo #>
 
-<#	IEnumerable<MethodInfo> methods = mainType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
-	methods = methods.Where(m => !m.Name.StartsWith("get_", StringComparison.Ordinal));
-	methods = methods.Where(m => !exclude.Contains(mainType.Name + "." + m.Name));
-	foreach (var methodInfo in methods) { #>
+<#	foreach (var methodInfo in GetWrappableMethods(mainType)) { #>
 		public <#=RetType(methodInfo.ReturnType)#> <#=methodInfo.Name#>()
 		{
 			return <#=RetVal(methodInfo.ReturnType, "wrapped." + methodInfo.Name + "()")#>;
 		}
-<#	} // end foreach (propertyInfo in mainType.GetProperties()) #>
+<#	} // end foreach methodInfo #>
 	}
 <# } // end foreach typeTuple (structs) #>
 
@@ -78,4 +75,22 @@ foreach (var typeTuple in typeTuples.Where(t => t.handleType == null && t.mainTy
 <#	  } #>
 	}
 <# } // end foreach typeTuple (enums) #>
+
+	partial class ModuleDefinition
+	{
+<#	foreach (var propertyInfo in GetWrappableProperties(typeof(MetadataReader))) { #>
+		public <#=RetType(propertyInfo.PropertyType)#> <#=propertyInfo.Name#> {
+			get {
+				return <#=RetVal(propertyInfo.PropertyType, "metadata." + propertyInfo.Name)#>;
+			}
+		}
+<#	} // end foreach (propertyInfo in GetWrappableProperties(typeof(MetadataReader))) #>
+
+<#	foreach (var methodInfo in GetWrappableMethods(typeof(MetadataReader))) { #>
+		public <#=RetType(methodInfo.ReturnType)#> <#=methodInfo.Name#>()
+		{
+			return <#=RetVal(methodInfo.ReturnType, "metadata." + methodInfo.Name + "()")#>;
+		}
+<#	} // end foreach (methodInfo in GetWrappableMethods(typeof(MetadataReader))) #>
+	}
 }
