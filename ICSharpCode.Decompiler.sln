@@ -7,6 +7,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ICSharpCode.Decompiler", "I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ICSharpCode.Decompiler.Tests", "ICSharpCode.Decompiler.Tests\ICSharpCode.Decompiler.Tests.csproj", "{9FB374F5-5969-4181-9519-6428ECF7F877}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{22C81C95-13BA-4B18-9080-B57958059D83}"
+	ProjectSection(SolutionItems) = preProject
+		Metadata and Typesystems.txt = Metadata and Typesystems.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

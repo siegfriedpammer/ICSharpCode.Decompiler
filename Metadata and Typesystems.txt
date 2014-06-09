@@ -1,0 +1,26 @@
+There are 3 metadata layers / type systems involved in ICSharpCode.Decompiler:
+
+1. System.Reflection.Metadata
+	The metadata is completely unresolved. For example, a decompiler operation that is given a
+	System.Reflection.Metadata.Field cannot determine that field's constant value,
+	because it only has access to the ConstantHandle.
+	To access the Constant itself, we would need to explicitly pass around the MetadataReader into all operations.
+
+2. ICSharpCode.Decompiler.Metadata
+	ICSharpCode.Decompiler.Metadata is our solution to the problem above.
+	It is a thin wrapper around System.Reflection.Metadata that removes the need for handles.
+	An ICSharpCode.Decompiler.Metadata.Field instance is sufficient to determine that field's type and constant value.
+	This allows us to write helper methods without having to explicitly pass around the MetadataReader.
+
+	However, references into other assemblies are still unresolved - we cannot go from a TypeReference to a TypeDefinition
+	if that's in another assembly.
+
+3. Microsoft.CodeAnalysis.*Symbol
+	These APIs work with a full compilation (set of assemblies), and fully resolve everything.
+
+Here is how other IL libraries fit into these layers:
+	Mono.Cecil operates on layer 2.
+	IKVM.Reflection operates on layer 3. It can also operate on layer 2,
+		but not on both layers at once (unless the assemblies are loaded twice).
+	ICSharpCode.NRefactory 5 operates on layer 3.
+		The NR5 unresolved type system operates on layer 1.

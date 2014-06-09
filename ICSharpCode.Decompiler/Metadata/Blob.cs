@@ -17,5 +17,21 @@ namespace ICSharpCode.Decompiler.Metadata
 			this.module = module;
 			this.handle = handle;
 		}
+
+		static readonly byte[] emptyByteArray = new byte[0];
+
+		public byte[] GetBytes()
+		{
+			if (module == null)
+				return emptyByteArray;
+			return module.metadata.GetBytes(handle);
+		}
+
+		public BlobReader GetReader()
+		{
+			if (module == null)
+				return default(BlobReader);
+			return module.metadata.GetReader(handle);
+		}
 	}
 }

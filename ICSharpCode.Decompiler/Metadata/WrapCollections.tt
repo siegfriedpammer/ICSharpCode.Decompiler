@@ -30,6 +30,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using SRM = System.Reflection.Metadata;
 namespace ICSharpCode.Decompiler.Metadata
@@ -50,25 +51,27 @@ foreach (var typeTuple in typeTuples.Where(t => t.collectionType != null)) {
 	var mainType = typeTuple.mainType;
 	var handleType = typeTuple.handleType;
 	var collectionType = typeTuple.collectionType;
-	
+	bool hasCount = collectionType.GetProperty("Count") != null;
 #>
-	public partial struct <#=mainType.Name#>Collection : IEnumerable<<#=mainType.Name#>>
+	public partial struct <#=mainType.Name#>Collection : <#=string.Format("{0}<{1}>", hasCount ? "IReadOnlyCollection" : "IEnumerable", mainType.Name)#>
 	{
 		readonly Module module;
 		SRM.<#=collectionType.Name#> handleCollection;
 
 		internal <#=mainType.Name#>Collection(Module module, SRM.<#=collectionType.Name#> handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this <#=mainType.Name#>Collection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+<#	if (hasCount) { #>
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
+<#	} #>
 
 		public Enumerator GetEnumerator()
 		{
@@ -99,7 +102,7 @@ foreach (var typeTuple in typeTuples.Where(t => t.collectionType != null)) {
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public <#=mainType.Name#> Current {
 				get {
 					return new <#=mainType.Name#>(module, handleEnumerator.Current);

@@ -28,6 +28,7 @@
 <#@ import namespace="System.Reflection.Metadata" #>
 <#@ output extension=".cs" #>
 using System;
+using System.Diagnostics;
 using SRM = System.Reflection.Metadata;
 namespace ICSharpCode.Decompiler.Metadata
 {
@@ -98,6 +99,7 @@ foreach (var typeTuple in typeTuples) {
 
 		internal <#=mainType.Name#>(Module module, SRM.<#=handleType.Name#> handle)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handle = handle;
 		}
@@ -109,13 +111,17 @@ foreach (var typeTuple in typeTuples) {
 			get { return module; }
 		}
 
+		public bool IsNil {
+			get { return handle.IsNil; }
+		}
+
 <#	if ((int)GetHandleTypeEnum(handleType) < 128) { #>
 		/// <summary>
 		/// Gets the metadata token associated with this <#=mainType.Name#>.
 		/// </summary>
 		public int MetadataToken {
 			get { 
-				if (module == null)
+				if (handle.IsNil)
 					return 0;
 				return SRM.Ecma335.MetadataTokens.GetToken(module.metadata, handle); 
 			}
@@ -125,7 +131,7 @@ foreach (var typeTuple in typeTuples) {
 <#	foreach (var propertyInfo in mainType.GetProperties()) { #>
 		public <#=RetType(propertyInfo.PropertyType)#> <#=propertyInfo.Name#> {
 			get {
-				if (module == null)
+				if (handle.IsNil)
 					return default(<#=RetType(propertyInfo.PropertyType)#>);
 				var target = module.metadata.Get<#=mainType.Name#>(handle);
 				return <#=RetVal(propertyInfo.PropertyType, "target." + propertyInfo.Name)#>;
@@ -139,7 +145,7 @@ foreach (var typeTuple in typeTuples) {
 	foreach (var methodInfo in methods) { #>
 		public <#=RetType(methodInfo.ReturnType)#> <#=methodInfo.Name#>()
 		{
-			if (module == null)
+			if (handle.IsNil)
 				return default(<#=RetType(methodInfo.ReturnType)#>);
 			var target = module.metadata.Get<#=mainType.Name#>(handle);
 			return <#=RetVal(methodInfo.ReturnType, "target." + methodInfo.Name + "()")#>;
@@ -174,6 +180,8 @@ foreach (var typeTuple in typeTuples) {
 #>
 		public <#=mainType.Name#> FromHandle(SRM.<#=handleType.Name#> handle)
 		{
+			if (handle.IsNil)
+				throw new ArgumentNullException("handle");
 			return new <#=mainType.Name#>(this, handle);
 		}
 <#	} // end foreach typeTuple #>

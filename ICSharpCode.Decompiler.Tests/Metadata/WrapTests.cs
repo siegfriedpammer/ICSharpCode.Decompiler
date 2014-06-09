@@ -20,7 +20,9 @@ namespace ICSharpCode.Decompiler.Tests.Metadata
 				dynamic collection = Activator.CreateInstance(type);
 				Assert.IsFalse(collection.GetEnumerator().MoveNext(), "default(" + type.Name + ") is not empty");
 				Assert.IsFalse(((IEnumerable)collection).GetEnumerator().MoveNext(), "default(" + type.Name + ") is not empty (non-generic enumerator)");
-			}
+				if (type.GetProperty("Count") != null)
+					Assert.AreEqual(0, collection.Count, "default(" + type.Name + ").Count should be 0");
+            }
 		}
 	}
 }

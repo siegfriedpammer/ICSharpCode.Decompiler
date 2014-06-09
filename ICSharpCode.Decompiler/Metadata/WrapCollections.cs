@@ -19,26 +19,27 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using SRM = System.Reflection.Metadata;
 namespace ICSharpCode.Decompiler.Metadata
 {
-	public partial struct AssemblyFileCollection : IEnumerable<AssemblyFile>
+	public partial struct AssemblyFileCollection : IReadOnlyCollection<AssemblyFile>
 	{
 		readonly Module module;
 		SRM.AssemblyFileHandleCollection handleCollection;
 
 		internal AssemblyFileCollection(Module module, SRM.AssemblyFileHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this AssemblyFileCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -70,7 +71,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public AssemblyFile Current {
 				get {
 					return new AssemblyFile(module, handleEnumerator.Current);
@@ -85,22 +86,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct AssemblyReferenceCollection : IEnumerable<AssemblyReference>
+	public partial struct AssemblyReferenceCollection : IReadOnlyCollection<AssemblyReference>
 	{
 		readonly Module module;
 		SRM.AssemblyReferenceHandleCollection handleCollection;
 
 		internal AssemblyReferenceCollection(Module module, SRM.AssemblyReferenceHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this AssemblyReferenceCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -132,7 +133,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public AssemblyReference Current {
 				get {
 					return new AssemblyReference(module, handleEnumerator.Current);
@@ -147,22 +148,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct CustomAttributeCollection : IEnumerable<CustomAttribute>
+	public partial struct CustomAttributeCollection : IReadOnlyCollection<CustomAttribute>
 	{
 		readonly Module module;
 		SRM.CustomAttributeHandleCollection handleCollection;
 
 		internal CustomAttributeCollection(Module module, SRM.CustomAttributeHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this CustomAttributeCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -194,7 +195,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public CustomAttribute Current {
 				get {
 					return new CustomAttribute(module, handleEnumerator.Current);
@@ -209,22 +210,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct DeclarativeSecurityAttributeCollection : IEnumerable<DeclarativeSecurityAttribute>
+	public partial struct DeclarativeSecurityAttributeCollection : IReadOnlyCollection<DeclarativeSecurityAttribute>
 	{
 		readonly Module module;
 		SRM.DeclarativeSecurityAttributeHandleCollection handleCollection;
 
 		internal DeclarativeSecurityAttributeCollection(Module module, SRM.DeclarativeSecurityAttributeHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this DeclarativeSecurityAttributeCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -256,7 +257,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public DeclarativeSecurityAttribute Current {
 				get {
 					return new DeclarativeSecurityAttribute(module, handleEnumerator.Current);
@@ -271,22 +272,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct EventCollection : IEnumerable<Event>
+	public partial struct EventCollection : IReadOnlyCollection<Event>
 	{
 		readonly Module module;
 		SRM.EventHandleCollection handleCollection;
 
 		internal EventCollection(Module module, SRM.EventHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this EventCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -318,7 +319,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public Event Current {
 				get {
 					return new Event(module, handleEnumerator.Current);
@@ -333,22 +334,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct FieldCollection : IEnumerable<Field>
+	public partial struct FieldCollection : IReadOnlyCollection<Field>
 	{
 		readonly Module module;
 		SRM.FieldHandleCollection handleCollection;
 
 		internal FieldCollection(Module module, SRM.FieldHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this FieldCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -380,7 +381,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public Field Current {
 				get {
 					return new Field(module, handleEnumerator.Current);
@@ -395,22 +396,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct GenericParameterCollection : IEnumerable<GenericParameter>
+	public partial struct GenericParameterCollection : IReadOnlyCollection<GenericParameter>
 	{
 		readonly Module module;
 		SRM.GenericParameterHandleCollection handleCollection;
 
 		internal GenericParameterCollection(Module module, SRM.GenericParameterHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this GenericParameterCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -442,7 +443,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public GenericParameter Current {
 				get {
 					return new GenericParameter(module, handleEnumerator.Current);
@@ -457,22 +458,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct GenericParameterConstraintCollection : IEnumerable<GenericParameterConstraint>
+	public partial struct GenericParameterConstraintCollection : IReadOnlyCollection<GenericParameterConstraint>
 	{
 		readonly Module module;
 		SRM.GenericParameterConstraintHandleCollection handleCollection;
 
 		internal GenericParameterConstraintCollection(Module module, SRM.GenericParameterConstraintHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this GenericParameterConstraintCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -504,7 +505,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public GenericParameterConstraint Current {
 				get {
 					return new GenericParameterConstraint(module, handleEnumerator.Current);
@@ -519,22 +520,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct ManifestResourceCollection : IEnumerable<ManifestResource>
+	public partial struct ManifestResourceCollection : IReadOnlyCollection<ManifestResource>
 	{
 		readonly Module module;
 		SRM.ManifestResourceHandleCollection handleCollection;
 
 		internal ManifestResourceCollection(Module module, SRM.ManifestResourceHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this ManifestResourceCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -566,7 +567,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public ManifestResource Current {
 				get {
 					return new ManifestResource(module, handleEnumerator.Current);
@@ -581,22 +582,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct MemberReferenceCollection : IEnumerable<MemberReference>
+	public partial struct MemberReferenceCollection : IReadOnlyCollection<MemberReference>
 	{
 		readonly Module module;
 		SRM.MemberReferenceHandleCollection handleCollection;
 
 		internal MemberReferenceCollection(Module module, SRM.MemberReferenceHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this MemberReferenceCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -628,7 +629,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public MemberReference Current {
 				get {
 					return new MemberReference(module, handleEnumerator.Current);
@@ -643,22 +644,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct MethodCollection : IEnumerable<Method>
+	public partial struct MethodCollection : IReadOnlyCollection<Method>
 	{
 		readonly Module module;
 		SRM.MethodHandleCollection handleCollection;
 
 		internal MethodCollection(Module module, SRM.MethodHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this MethodCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -690,7 +691,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public Method Current {
 				get {
 					return new Method(module, handleEnumerator.Current);
@@ -705,22 +706,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct ParameterCollection : IEnumerable<Parameter>
+	public partial struct ParameterCollection : IReadOnlyCollection<Parameter>
 	{
 		readonly Module module;
 		SRM.ParameterHandleCollection handleCollection;
 
 		internal ParameterCollection(Module module, SRM.ParameterHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this ParameterCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -752,7 +753,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public Parameter Current {
 				get {
 					return new Parameter(module, handleEnumerator.Current);
@@ -767,22 +768,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct PropertyCollection : IEnumerable<Property>
+	public partial struct PropertyCollection : IReadOnlyCollection<Property>
 	{
 		readonly Module module;
 		SRM.PropertyHandleCollection handleCollection;
 
 		internal PropertyCollection(Module module, SRM.PropertyHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this PropertyCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -814,7 +815,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public Property Current {
 				get {
 					return new Property(module, handleEnumerator.Current);
@@ -836,16 +837,11 @@ namespace ICSharpCode.Decompiler.Metadata
 
 		internal TypeForwarderCollection(Module module, SRM.TypeForwarderHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this TypeForwarderCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
-		}
 
 		public Enumerator GetEnumerator()
 		{
@@ -876,7 +872,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public TypeForwarder Current {
 				get {
 					return new TypeForwarder(module, handleEnumerator.Current);
@@ -891,22 +887,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct TypeReferenceCollection : IEnumerable<TypeReference>
+	public partial struct TypeReferenceCollection : IReadOnlyCollection<TypeReference>
 	{
 		readonly Module module;
 		SRM.TypeReferenceHandleCollection handleCollection;
 
 		internal TypeReferenceCollection(Module module, SRM.TypeReferenceHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this TypeReferenceCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -938,7 +934,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public TypeReference Current {
 				get {
 					return new TypeReference(module, handleEnumerator.Current);
@@ -953,22 +949,22 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 	}
-	public partial struct TypeDefinitionCollection : IEnumerable<TypeDefinition>
+	public partial struct TypeDefinitionCollection : IReadOnlyCollection<TypeDefinition>
 	{
 		readonly Module module;
 		SRM.TypeHandleCollection handleCollection;
 
 		internal TypeDefinitionCollection(Module module, SRM.TypeHandleCollection handleCollection)
 		{
+			Debug.Assert(module != null);
 			this.module = module;
 			this.handleCollection = handleCollection;
 		}
 
-		/// <summary>
-		/// Gets the module containing this TypeDefinitionCollection.
-		/// </summary>
-		public Module ContainingModule {
-			get { return module; }
+		public int Count {
+			get {
+				return module != null ? handleCollection.Count : 0;
+			}
 		}
 
 		public Enumerator GetEnumerator()
@@ -1000,7 +996,7 @@ namespace ICSharpCode.Decompiler.Metadata
 				this.module = module;
 				this.handleEnumerator = handleEnumerator;
 			}
-
+			
 			public TypeDefinition Current {
 				get {
 					return new TypeDefinition(module, handleEnumerator.Current);
