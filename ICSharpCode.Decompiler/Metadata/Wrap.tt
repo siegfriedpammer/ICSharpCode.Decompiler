@@ -20,7 +20,6 @@ var exclude = new HashSet<string> {
 	"HandleType", // the wrapped API is supposed to hide handles
 	"CustomAttributeNamedArgumentKind", // we don't decode custom attributes at this layer
 	"SerializationTypeCode", // the wrapped API doesn't expose raw signatures
-	"SignatureTypeCode", // the wrapped API doesn't expose raw signatures
 	"MetadataReaderOptions", // we are using MetadataOptions instead
 	"MetadataReader.Options", // we are using MetadataOptions instead
 };

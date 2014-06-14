@@ -39,7 +39,7 @@ foreach (var typeTuple in typeTuples.Where(t => t.handleType == null && !t.mainT
 			this.module = module;
 			this.wrapped = wrapped;
 		}
-
+		
 		/// <summary>
 		/// Gets the module containing this <#=mainType.Name#>.
 		/// </summary>

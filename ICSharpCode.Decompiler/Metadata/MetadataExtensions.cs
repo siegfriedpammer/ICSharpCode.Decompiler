@@ -50,5 +50,19 @@ namespace ICSharpCode.Decompiler.Metadata
 		{
 			return "0x" + MetadataTokens.GetToken(handle).ToString("x8");
 		}
+
+		public static TypeSignatureCollection GetLocalVariableTypes(this MethodBodyBlock body, MetadataReader metadata)
+		{
+			if (body == null)
+				throw new ArgumentNullException("body");
+			if (body.LocalSignature.IsNil)
+				return new TypeSignatureCollection();
+			var localSigBlobHandle = metadata.GetLocalSignature(body.LocalSignature);
+			var localSigReader = metadata.GetReader(localSigBlobHandle);
+			if (localSigReader.ReadByte() != SRM.SignatureHeader.LocalVar)
+				throw new BadImageFormatException();
+			var count = localSigReader.ReadUInt16();
+			return new TypeSignatureCollection(ref localSigReader, count);
+		}
 	}
 }

@@ -18,9 +18,8 @@ namespace ICSharpCode.Decompiler.Metadata
 		MetadataOptions options;
 		readonly ModuleDefinition module;
 
-		public ModuleDefinition(string fileName, MetadataOptions options = MetadataOptions.None)
+		public ModuleDefinition(string fileName, MetadataOptions options = MetadataOptions.None) : this()
 		{
-			this.module = this;
 			if ((options & MetadataOptions.CopyImageToMemory) != 0) {
 				using (var fs = File.OpenRead(fileName)) {
 					Init(new PEReader(fs, PEStreamOptions.PrefetchEntireImage), options);
@@ -30,10 +29,15 @@ namespace ICSharpCode.Decompiler.Metadata
 			}
 		}
 
-		public ModuleDefinition(ImmutableArray<byte> peImage, MetadataOptions options = MetadataOptions.None)
+		public ModuleDefinition(ImmutableArray<byte> peImage, MetadataOptions options = MetadataOptions.None) : this()
+		{
+			Init(new PEReader(peImage), options);
+		}
+
+		private ModuleDefinition()
 		{
 			this.module = this;
-			Init(new PEReader(peImage), options);
+			this.handleUsageTableLazyTask = new Lazy<Task<HandleUsageTable>>(() => Task.Run(() => new HandleUsageTable(this)));
 		}
 
 		void Init(PEReader peReader, MetadataOptions options)
@@ -46,7 +50,7 @@ namespace ICSharpCode.Decompiler.Metadata
 			if ((options & MetadataOptions.ApplyWindowsRuntimeProjections) != 0)
 				srmOptions |= SRM.MetadataReaderOptions.ApplyWindowsRuntimeProjections;
             this.metadata = peReader.GetMetadataReader(srmOptions);
-		}
+        }
 
 		internal ModuleDefinition(SRM.MetadataReader metadata, MetadataOptions options)
 		{
@@ -139,6 +143,13 @@ namespace ICSharpCode.Decompiler.Metadata
 		public SRM.BlobReader ReadFromRVA(DirectoryEntry directory)
 		{
 			return ReadFromRVA(directory.RelativeVirtualAddress, directory.Size);
+		}
+
+		readonly Lazy<Task<HandleUsageTable>> handleUsageTableLazyTask;
+
+		public Task<HandleUsageTable> GetHandleUsageTableAsync()
+		{
+			return handleUsageTableLazyTask.Value;
 		}
 	}
 }

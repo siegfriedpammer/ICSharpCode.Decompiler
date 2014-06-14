@@ -29,7 +29,6 @@ using SRM = System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using System.Text;
-using Type = ICSharpCode.Decompiler.Metadata.Type;
 using System.Reflection;
 
 namespace ICSharpCode.Decompiler.Disassembler
@@ -96,7 +95,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 				referencedAssemblies.Add(assemblyReference, name);
 				i++;
 			}
-			typerefs = new HashSet<Type>(module.TypeReferences.Select(tr => (Type)tr));
+			//typerefs = new HashSet<Type>(module.TypeReferences.Select(tr => (Type)tr));
 			//methodNames = GetMethodNames();
 			//fieldNames = GetFieldNames();
 		}
@@ -624,7 +623,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 			WriteTypeNameNoOuter(lw, type);
 			if (type.IsGenericTypeDefinition) {
-				WriteGenericParameterDef(lw, type.GetGenericArguments(), true);
+				WriteGenericParameterDef(lw, type.GetGenericParameters(), true);
 			}
 			lw.WriteLine();
 			lw.GoToColumn(level);
@@ -634,8 +633,8 @@ namespace ICSharpCode.Decompiler.Disassembler
 				lw.WriteLine();
 				lw.GoToColumn(level);
 			}
-			Type[] interfaces = type.__GetDeclaredInterfaces();
-			if (interfaces.Length != 0) {
+			var interfaces = type.GetImplementedInterfaces();
+			if (interfaces.Count != 0) {
 				lw.Write("       implements ");
 				bool first = true;
 				foreach (var iface in interfaces) {
@@ -650,15 +649,15 @@ namespace ICSharpCode.Decompiler.Disassembler
 				lw.GoToColumn(level);
 			}
 			lw.WriteLine("{");
-			int packingSize;
-			int typeSize;
-			if (type.__GetLayout(out packingSize, out typeSize)) {
+			uint packingSize;
+			uint typeSize;
+			if (type.GetTypeLayout(out packingSize, out typeSize)) {
 				lw.GoToColumn(level + 2);
 				lw.WriteLine(".pack {0}", packingSize);
 				lw.GoToColumn(level + 2);
 				lw.WriteLine(".size {0}", typeSize);
 			}
-			WriteCustomAttributes(lw, level + 2, type.__GetCustomAttributes(null, false));
+			WriteCustomAttributes(lw, level + 2, type.GetCustomAttributes());
 			WriteDeclarativeSecurity(lw, level + 2, CustomAttributeData.__GetDeclarativeSecurity(type), type.MetadataToken);
 			WriteGenericParameterCustomAttributes(lw, level + 2, type.GetGenericArguments());
 			if (compat == CompatLevel.None || compat >= CompatLevel.V45) {
@@ -725,35 +724,35 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 		}
 
-		void WriteGenericParameterDef(LineWriter lw, Type[] parameters, bool wrap)
+		void WriteGenericParameterDef(LineWriter lw, GenericParameterCollection parameters, bool wrap)
 		{
 			lw.Write("<");
 			int level = lw.Column;
 			string sep = "";
-			for (int i = 0; i < parameters.Length; i++) {
-				Type par = parameters[i];
+			int i = 0;
+			foreach (var par in parameters) {
 				lw.Write(sep);
 				if (wrap && i != 0 && i % 4 == 0) {
 					lw.WriteLine();
 					lw.GoToColumn(level);
 				}
-				if ((par.GenericParameterAttributes & GenericParameterAttributes.Contravariant) != 0) {
+				if ((par.Attributes & GenericParameterAttributes.Contravariant) != 0) {
 					lw.Write("- ");
 				}
-				if ((par.GenericParameterAttributes & GenericParameterAttributes.Covariant) != 0) {
+				if ((par.Attributes & GenericParameterAttributes.Covariant) != 0) {
 					lw.Write("+ ");
 				}
-				if ((par.GenericParameterAttributes & GenericParameterAttributes.ReferenceTypeConstraint) != 0) {
+				if ((par.Attributes & GenericParameterAttributes.ReferenceTypeConstraint) != 0) {
 					lw.Write("class ");
 				}
-				if ((par.GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0) {
+				if ((par.Attributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0) {
 					lw.Write("valuetype ");
 				}
-				if ((par.GenericParameterAttributes & GenericParameterAttributes.DefaultConstructorConstraint) != 0) {
+				if ((par.Attributes & GenericParameterAttributes.DefaultConstructorConstraint) != 0) {
 					lw.Write(".ctor ");
 				}
 				string sep2 = "(";
-				foreach (var constraint in par.GetGenericParameterConstraints()) {
+				foreach (var constraint in par.GetConstraints()) {
 					lw.Write(sep2);
 					sep2 = ", ";
 					if (constraint.__IsMissing || !constraint.IsGenericType) {
@@ -767,6 +766,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 				}
 				lw.Write("{0}", QuoteIdentifier(par.Name));
 				sep = ",";
+				i++;
 			}
 			lw.Write(">");
 		}
@@ -2080,7 +2080,7 @@ namespace ICSharpCode.Decompiler.Disassembler
 			}
 		}
 
-		void WriteCustomAttributes(LineWriter lw, int level, IEnumerable<CustomAttributeData> cas)
+		void WriteCustomAttributes(LineWriter lw, int level, CustomAttributeCollection cas)
 		{
 			if (diffMode) {
 				cas = cas.OrderBy(ca => ca.Constructor.DeclaringType.FullName);

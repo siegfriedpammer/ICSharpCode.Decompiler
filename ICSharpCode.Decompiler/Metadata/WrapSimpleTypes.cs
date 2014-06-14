@@ -32,7 +32,7 @@ namespace ICSharpCode.Decompiler.Metadata
 			this.module = module;
 			this.wrapped = wrapped;
 		}
-
+		
 		/// <summary>
 		/// Gets the module containing this AssemblyDefinition.
 		/// </summary>
@@ -91,7 +91,7 @@ namespace ICSharpCode.Decompiler.Metadata
 			this.module = module;
 			this.wrapped = wrapped;
 		}
-
+		
 		/// <summary>
 		/// Gets the module containing this EventMethodHandles.
 		/// </summary>
@@ -127,7 +127,7 @@ namespace ICSharpCode.Decompiler.Metadata
 			this.module = module;
 			this.wrapped = wrapped;
 		}
-
+		
 		/// <summary>
 		/// Gets the module containing this ExceptionRegion.
 		/// </summary>
@@ -183,7 +183,7 @@ namespace ICSharpCode.Decompiler.Metadata
 			this.module = module;
 			this.wrapped = wrapped;
 		}
-
+		
 		/// <summary>
 		/// Gets the module containing this MethodImport.
 		/// </summary>
@@ -219,7 +219,7 @@ namespace ICSharpCode.Decompiler.Metadata
 			this.module = module;
 			this.wrapped = wrapped;
 		}
-
+		
 		/// <summary>
 		/// Gets the module containing this PropertyMethodHandles.
 		/// </summary>
@@ -270,6 +270,41 @@ namespace ICSharpCode.Decompiler.Metadata
 		Ecma335 = SRM.MetadataKind.Ecma335,
 		WindowsMetadata = SRM.MetadataKind.WindowsMetadata,
 		ManagedWindowsMetadata = SRM.MetadataKind.ManagedWindowsMetadata,
+	}
+	public enum SignatureTypeCode : byte
+	{
+		Invalid = SRM.SignatureTypeCode.Invalid,
+		Void = SRM.SignatureTypeCode.Void,
+		Boolean = SRM.SignatureTypeCode.Boolean,
+		Char = SRM.SignatureTypeCode.Char,
+		SByte = SRM.SignatureTypeCode.SByte,
+		Byte = SRM.SignatureTypeCode.Byte,
+		Int16 = SRM.SignatureTypeCode.Int16,
+		UInt16 = SRM.SignatureTypeCode.UInt16,
+		Int32 = SRM.SignatureTypeCode.Int32,
+		UInt32 = SRM.SignatureTypeCode.UInt32,
+		Int64 = SRM.SignatureTypeCode.Int64,
+		UInt64 = SRM.SignatureTypeCode.UInt64,
+		Single = SRM.SignatureTypeCode.Single,
+		Double = SRM.SignatureTypeCode.Double,
+		String = SRM.SignatureTypeCode.String,
+		Pointer = SRM.SignatureTypeCode.Pointer,
+		ByReference = SRM.SignatureTypeCode.ByReference,
+		GenericTypeParameter = SRM.SignatureTypeCode.GenericTypeParameter,
+		Array = SRM.SignatureTypeCode.Array,
+		GenericTypeInstance = SRM.SignatureTypeCode.GenericTypeInstance,
+		TypedReference = SRM.SignatureTypeCode.TypedReference,
+		IntPtr = SRM.SignatureTypeCode.IntPtr,
+		UIntPtr = SRM.SignatureTypeCode.UIntPtr,
+		FunctionPointer = SRM.SignatureTypeCode.FunctionPointer,
+		Object = SRM.SignatureTypeCode.Object,
+		SZArray = SRM.SignatureTypeCode.SZArray,
+		GenericMethodParameter = SRM.SignatureTypeCode.GenericMethodParameter,
+		RequiredModifier = SRM.SignatureTypeCode.RequiredModifier,
+		OptionalModifier = SRM.SignatureTypeCode.OptionalModifier,
+		TypeHandle = SRM.SignatureTypeCode.TypeHandle,
+		Sentinel = SRM.SignatureTypeCode.Sentinel,
+		Pinned = SRM.SignatureTypeCode.Pinned,
 	}
 
 	partial class ModuleDefinition

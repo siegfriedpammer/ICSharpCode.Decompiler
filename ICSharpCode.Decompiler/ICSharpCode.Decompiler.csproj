@@ -48,21 +48,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Disassembler\ByteReader.cs" />
-    <Compile Include="Disassembler\CABlob.cs" />
-    <Compile Include="Disassembler\Disassembler.cs" />
-    <Compile Include="Disassembler\ExportedMethods.cs" />
-    <Compile Include="Disassembler\IL.cs" />
-    <Compile Include="Disassembler\Keywords.cs" />
-    <Compile Include="Disassembler\LineWriter.cs" />
-    <Compile Include="Disassembler\Util.cs" />
-    <Compile Include="Disassembler\VTableFixups.cs" />
+    <Compile Include="IL\ILOpCodes.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ILOpCodes.tt</DependentUpon>
+    </Compile>
+    <Compile Include="IL\OperandType.cs" />
+    <Compile Include="Metadata\HandleUsageTable.cs" />
+    <Compile Include="IL\ILReader.cs" />
+    <Compile Include="Metadata\TypeSignature.cs" />
+    <Compile Include="Metadata\TypeSignatureCollection.cs" />
     <Compile Include="Metadata\Blob.cs" />
     <Compile Include="Metadata\MetadataOptions.cs" />
     <Compile Include="Metadata\Method.cs" />
+    <Compile Include="Metadata\MethodSignature.cs" />
     <Compile Include="Metadata\ModuleDefinition.cs" />
     <Compile Include="Metadata\ModuleReference.cs" />
-    <Compile Include="Metadata\Type.cs" />
+    <Compile Include="Metadata\Signature.cs" />
     <Compile Include="Metadata\TypeDefinition.cs" />
     <Compile Include="Metadata\WrapHandles.cs">
       <AutoGen>True</AutoGen>
@@ -84,6 +86,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="IL\ILOpCodes.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ILOpCodes.cs</LastGenOutput>
+    </None>
     <None Include="Metadata\Wrap.tt" />
     <None Include="Metadata\WrapCollections.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
