@@ -48,12 +48,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IL\ILInstruction.cs" />
     <Compile Include="IL\ILOpCodes.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>ILOpCodes.tt</DependentUpon>
     </Compile>
+    <Compile Include="IL\ILTypeExtensions.cs" />
+    <Compile Include="IL\OpCode.cs" />
     <Compile Include="IL\OperandType.cs" />
+    <Compile Include="IL\PrimitiveType.cs" />
+    <Compile Include="IL\StackType.cs" />
     <Compile Include="Metadata\HandleUsageTable.cs" />
     <Compile Include="IL\ILReader.cs" />
     <Compile Include="Metadata\TypeSignature.cs" />
@@ -84,6 +89,7 @@
       <DependentUpon>WrapSimpleTypes.tt</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Util\Interval.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="IL\ILOpCodes.tt">
