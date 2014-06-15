@@ -8,26 +8,40 @@ using System.Threading.Tasks;
 namespace ICSharpCode.Decompiler
 {
 	/// <summary>
-	/// Represents an interval.
-	/// Note that both the start and end positions are inclusive.
+	/// Represents a half-open interval.
+	/// The start position is inclusive; but the end position is exclusive.
 	/// </summary>
-	public struct Interval(public readonly int Start, public readonly int End)
+	public struct Interval
 	{
-		public static readonly Interval Empty = new Interval(0, -1);
+		public static readonly Interval Empty = new Interval(0, 0);
 
-		public int Length
+		/// <summary>
+		/// Gets the inclusive start of the interval.
+		/// </summary>
+		public readonly int Start;
+
+		/// <summary>
+		/// Gets the exclusive end of the interval.
+		/// </summary>
+		public readonly int End;
+
+		public Interval(int start, int end)
 		{
-			get { return End - Start + 1; }
+			if (start > end && end != int.MinValue)
+				throw new ArgumentException("The end must be after the start", "end");
+			this.Start = start;
+			this.End = end;
 		}
 
 		public bool Contains(int val)
 		{
-			return Start <= val && val <= End;
+			// Use 'val <= End-1' instead of 'val < End' to allow intervals to include int.MaxValue.
+			return Start <= val && val <= unchecked(End - 1);
 		}
 
 		public override string ToString()
 		{
-			return string.Format("({0} to {1})", Start, End);
+			return string.Format("[{0}..{1})", Start, End);
 		}
 	}
 
@@ -44,7 +58,7 @@ namespace ICSharpCode.Decompiler
 		public bool Contains(int val)
 		{
 			// TODO: use binary search
-            foreach (Interval v in Intervals) {
+			foreach (Interval v in Intervals) {
 				if (v.Start <= val && val <= v.End)
 					return true;
 			}

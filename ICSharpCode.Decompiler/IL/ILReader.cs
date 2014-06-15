@@ -42,8 +42,6 @@ namespace ICSharpCode.Decompiler.IL
 				ILInstruction decodedInstruction = DecodeInstruction();
 				decodedInstruction.ILRange = new Interval(start, reader.Offset);
 				instructionBuilder.Add(decodedInstruction);
-				if (decodedInstruction.PushType != StackType.Void)
-					stack.Push(decodedInstruction.PushType);
 			}
 		}
 
@@ -60,7 +58,8 @@ namespace ICSharpCode.Decompiler.IL
 				case ILOpCode.And:
 					return DecodeBinaryNumericInstruction(OpCode.BitAnd);
 				case ILOpCode.Arglist:
-					return new SimpleInstruction(OpCode.Arglist, StackType.O);
+					stack.Push(StackType.O);
+					return new SimpleInstruction(OpCode.Arglist);
 				case ILOpCode.Beq:
 					return DecodeComparisonBranch(false, OpCode.Ceq, OpCode.Ceq, false);
 				case ILOpCode.Beq_S:
@@ -106,7 +105,7 @@ namespace ICSharpCode.Decompiler.IL
 				case ILOpCode.Br_S:
 					return DecodeUnconditionalBranch(true);
 				case ILOpCode.Break:
-					return new SimpleInstruction(OpCode.Break, StackType.Void);
+					return new SimpleInstruction(OpCode.Break);
 				case ILOpCode.Brfalse:
 					return DecodeConditionalBranch(false, true);
 				case ILOpCode.Brfalse_S:
@@ -130,7 +129,7 @@ namespace ICSharpCode.Decompiler.IL
 				case ILOpCode.Clt_Un:
 					return DecodeComparison(OpCode.Clt_Un, OpCode.Clt_Un);
 				case ILOpCode.Ckfinite:
-					return new CkfiniteInstruction();
+					return new PeekInstruction(OpCode.Ckfinite);
 				case ILOpCode.Conv_I1:
 					return DecodeConv(PrimitiveType.I1, OverflowMode.None);
 				case ILOpCode.Conv_I2:
@@ -204,7 +203,7 @@ namespace ICSharpCode.Decompiler.IL
 				case ILOpCode.Div_Un:
 					return DecodeBinaryNumericInstruction(OpCode.Div, OverflowMode.Un);
 				case ILOpCode.Dup:
-					return new DupInstruction(stack.Peek());
+					return new PeekInstruction(OpCode.Peek);
 				case ILOpCode.Endfilter:
 					throw new NotImplementedException();
 				case ILOpCode.Endfinally:
@@ -220,9 +219,7 @@ namespace ICSharpCode.Decompiler.IL
 
 		private ILInstruction DecodeConv(PrimitiveType targetType, OverflowMode mode)
 		{
-			if (stack.Count == 0)
-				return InvalidInstruction();
-			StackType from = stack.Pop();
+			StackType from = stack.PopOrDefault();
 			return new ConvInstruction(from, targetType, mode);
 		}
 
@@ -235,18 +232,16 @@ namespace ICSharpCode.Decompiler.IL
 
 		ILInstruction DecodeComparison(OpCode opCode_I, OpCode opCode_F)
 		{
-			if (stack.Count < 2)
-				return InvalidInstruction();
-			StackType right = stack.Pop();
-			StackType left = stack.Pop();
+			StackType right = stack.PopOrDefault();
+			StackType left = stack.PopOrDefault();
+			stack.Push(StackType.I4);
 			// Based on Table 4: Binary Comparison or Branch Operation
 			if (left == StackType.F && right == StackType.F)
-				return new BinaryNumericInstruction(opCode_F, StackType.F, StackType.I4, OverflowMode.None);
-			if (left == right)
-				return new BinaryNumericInstruction(opCode_I, left, StackType.I4, OverflowMode.None);
+				return new BinaryNumericInstruction(opCode_F, StackType.F, OverflowMode.None);
 			if (left == StackType.I || right == StackType.I)
-				return new BinaryNumericInstruction(opCode_I, StackType.I, StackType.I, OverflowMode.None);
-			return InvalidInstruction();
+				return new BinaryNumericInstruction(opCode_I, StackType.I, OverflowMode.None);
+			Debug.Assert(left == right); // this should hold in all valid IL
+			return new BinaryNumericInstruction(opCode_I, left, OverflowMode.None);
 		}
 
 		ILInstruction DecodeComparisonBranch(bool shortForm, OpCode comparisonOpCodeForInts, OpCode comparisonOpCodeForFloats, bool negate)
@@ -254,65 +249,70 @@ namespace ICSharpCode.Decompiler.IL
 			int start = reader.Offset - 1;
 			var condition = DecodeComparison(comparisonOpCodeForInts, comparisonOpCodeForFloats);
 			int target = start + (shortForm ? reader.ReadSByte() : reader.ReadInt32());
-			condition.ILRange = new Interval(start, reader.Offset - 1);
+			condition.ILRange = new Interval(start, reader.Offset);
 			if (negate) {
 				condition = new LogicNotInstruction {
 					Operand = condition,
 					ILRange = condition.ILRange
 				};
-            }
-			return new UnresolvedConditionalBranchInstruction(condition, target);
-        }
+			}
+			return new ConditionalBranchInstruction(condition, target);
+		}
 
 		ILInstruction DecodeConditionalBranch(bool shortForm, bool negate)
 		{
 			int start = reader.Offset - 1;
 			int target = start + (shortForm ? reader.ReadSByte() : reader.ReadInt32());
-			ILInstruction condition = null;
+			ILInstruction condition = ILInstruction.Pop;
 			if (negate) {
 				condition = new LogicNotInstruction {
 					Operand = condition,
-					ILRange = new Interval(start, reader.Offset - 1)
+					ILRange = new Interval(start, reader.Offset)
 				};
 			}
-			return new UnresolvedConditionalBranchInstruction(condition, target);
+			return new ConditionalBranchInstruction(condition, target);
 		}
 
 		ILInstruction DecodeUnconditionalBranch(bool shortForm)
 		{
 			int start = reader.Offset - 1;
 			int target = start + (shortForm ? reader.ReadSByte() : reader.ReadInt32());
-			return new UnresolvedBranchInstruction(target);
+			return new BranchInstruction(OpCode.Branch, target);
 		}
 
 		ILInstruction DecodeBinaryNumericInstruction(OpCode opCode, OverflowMode overflowMode = OverflowMode.None)
 		{
-			if (stack.Count < 2)
-				return InvalidInstruction();
-			StackType right = stack.Pop();
-			StackType left = stack.Pop();
+			StackType right = stack.PopOrDefault();
+			StackType left = stack.PopOrDefault();
 			// Based on Table 2: Binary Numeric Operations
 			// also works for Table 5: Integer Operations
 			// and for Table 7: Overflow Arithmetic Operations
-			if (left == right)
-				return new BinaryNumericInstruction(opCode, left, left, overflowMode);
+			if (left == right) {
+				stack.Push(left);
+				return new BinaryNumericInstruction(opCode, left, overflowMode);
+			}
 			if (left == StackType.Ref || right == StackType.Ref) {
 				if (left == StackType.Ref && right == StackType.Ref) {
 					// sub(&, &) = I
-					return new BinaryNumericInstruction(opCode, StackType.Ref, StackType.I, overflowMode);
+					stack.Push(StackType.I);
+				} else {
+					// add/sub with I or I4 and &
+					stack.Push(StackType.Ref);
 				}
-				// add/sub with I or I4 and &
-				return new BinaryNumericInstruction(opCode, StackType.Ref, StackType.Ref, overflowMode);
+				return new BinaryNumericInstruction(opCode, StackType.Ref, overflowMode);
 			}
-			if (left == StackType.I || right == StackType.I)
-				return new BinaryNumericInstruction(opCode, StackType.I, StackType.I, overflowMode);
-			return InvalidInstruction();
+			if (left == StackType.I || right == StackType.I) {
+				stack.Push(left);
+				return new BinaryNumericInstruction(opCode, StackType.I, overflowMode);
+			}
+			stack.Push(StackType.Unknown);
+			return new BinaryNumericInstruction(opCode, StackType.Unknown, overflowMode);
 		}
 
 		ILInstruction InvalidInstruction()
 		{
 			Debug.Fail("This should only happen in obfuscated code");
-			return new InvalidInstruction();
+			return new SimpleInstruction(OpCode.Invalid);
 		}
 	}
 }
