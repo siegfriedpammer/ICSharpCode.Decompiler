@@ -105,5 +105,6 @@ namespace ICSharpCode.Decompiler.IL
 		Ckfinite,
 		Conv,
 		Div,
+		LoadVar,
 	}
 }

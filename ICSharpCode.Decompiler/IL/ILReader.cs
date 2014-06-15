@@ -3,16 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SRM = System.Reflection.Metadata;
-using ICSharpCode.Decompiler.Metadata;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using Mono.Cecil;
 
 namespace ICSharpCode.Decompiler.IL
 {
-	class ILReader(Method method, SRM.MethodBodyBlock body)
+	class ILReader(MethodDefinition method, private Mono.Cecil.Cil.MethodBody body)
 	{
-		public static ILOpCode ReadOpCode(ref SRM.BlobReader reader)
+		public static ILOpCode ReadOpCode(ref BlobReader reader)
 		{
 			byte b = reader.ReadByte();
 			if (b == 0xfe)
@@ -21,14 +20,20 @@ namespace ICSharpCode.Decompiler.IL
 				return (ILOpCode)b;
 		}
 
-		public static SRM.Handle ReadMetadataToken(ref SRM.BlobReader reader)
+		public static MetadataToken ReadMetadataToken(ref BlobReader reader)
 		{
-			return SRM.Ecma335.MetadataTokens.Handle(reader.ReadInt32());
+			return new MetadataToken(reader.ReadUInt32());
 		}
 
 		ImmutableArray<ILInstruction>.Builder instructionBuilder = ImmutableArray.CreateBuilder<ILInstruction>();
-		SRM.BlobReader reader = body.GetILReader();
-		Stack<StackType> stack = new Stack<StackType>(body.MaxStack);
+		BlobReader reader = body.GetILReader();
+		Stack<StackType> stack = new Stack<StackType>(body.MaxStackSize);
+
+		IMetadataTokenProvider ReadAndDecodeMetadataToken()
+		{
+			var token = ReadMetadataToken(ref reader);
+			return body.LookupToken(token);
+		}
 
 		void ReadInstructions()
 		{
@@ -37,18 +42,52 @@ namespace ICSharpCode.Decompiler.IL
 			//var localVariableTypes = GetStackTypes(body.GetLocalVariableTypes(method.ContainingModule.metadata));
 			//var parameterTypes = GetStackTypes(methodSignature.ParameterTypes);
 			//var stack = new Stack<StackType>(body.MaxStack);
-			while (reader.RemainingBytes > 0) {
-				int start = reader.Offset;
+
+			// Dictionary that stores stacks for forward jumps
+			var branchStackDict = new Dictionary<int, ImmutableArray<StackType>>();
+
+			while (reader.Position < reader.Length) {
+				int start = reader.Position;
 				ILInstruction decodedInstruction = DecodeInstruction();
-				decodedInstruction.ILRange = new Interval(start, reader.Offset);
+				decodedInstruction.ILRange = new Interval(start, reader.Position);
 				instructionBuilder.Add(decodedInstruction);
+				if ((var branch = decodedInstruction as BranchInstruction) != null) {
+					if (branch.TargetILOffset >= reader.Position) {
+						branchStackDict[branch.TargetILOffset] = stack.ToImmutableArray();
+					}
+				}
+				if (IsUnconditionalBranch(decodedInstruction.OpCode)) {
+					stack.Clear();
+					if (branchStackDict.TryGetValue(reader.Position, out var stackFromBranch)) {
+						for (int i = stackFromBranch.Length - 1; i >= 0; i--) {
+							stack.Push(stackFromBranch[i]);
+						}
+					}
+				}
 			}
+		}
+
+		private bool IsUnconditionalBranch(OpCode opCode)
+		{
+			return opCode == OpCode.Branch;
 		}
 
 		ILInstruction DecodeInstruction()
 		{
 			var ilOpCode = ReadOpCode(ref reader);
 			switch (ilOpCode) {
+				case ILOpCode.Constrained:
+					return DecodeConstrainedCall();
+				case ILOpCode.Nop:
+					return DecodeNoPrefix();
+				case ILOpCode.Readonly:
+					throw new NotImplementedException(); // needs ldelema
+				case ILOpCode.Tailcall:
+					return DecodeTailCall();
+				case ILOpCode.Unaligned:
+					return DecodeUnaligned();
+				case ILOpCode.Volatile:
+					return DecodeVolatile();
 				case ILOpCode.Add:
 					return DecodeBinaryNumericInstruction(OpCode.Add);
 				case ILOpCode.Add_Ovf:
@@ -217,6 +256,50 @@ namespace ICSharpCode.Decompiler.IL
 			}
 		}
 
+		private ILInstruction DecodeConstrainedCall()
+		{
+			var typeRef = ReadAndDecodeMetadataToken() as TypeReference;
+			var inst = DecodeInstruction();
+			if ((var call = inst as CallInstruction) != null)
+				call.ConstrainedTo = typeRef;
+			return inst;
+		}
+
+		private ILInstruction DecodeTailCall()
+		{
+			var inst = DecodeInstruction();
+			if ((var call = inst as CallInstruction) != null)
+				call.IsTail = true;
+			return inst;
+		}
+
+		private ILInstruction DecodeUnaligned()
+		{
+			byte alignment = reader.ReadByte();
+			var inst = DecodeInstruction();
+			if ((var smp = inst as ISupportsMemoryPrefix) != null)
+				smp.UnalignedPrefix = alignment;
+			return inst;
+		}
+
+		private ILInstruction DecodeVolatile()
+		{
+			var inst = DecodeInstruction();
+			if ((var smp = inst as ISupportsMemoryPrefix) != null)
+				smp.IsVolatile = true;
+			return inst;
+		}
+
+		/// <summary>no prefix -- possibly skip a fault check</summary>
+		private ILInstruction DecodeNoPrefix()
+		{
+			var flags = (NoPrefixFlags)reader.ReadByte();
+			var inst = DecodeInstruction();
+			if ((var snp = inst as ISupportsNoPrefix) != null)
+				snp.NoPrefix = flags;
+			return inst;
+		}
+
 		private ILInstruction DecodeConv(PrimitiveType targetType, OverflowMode mode)
 		{
 			StackType from = stack.PopOrDefault();
@@ -226,6 +309,7 @@ namespace ICSharpCode.Decompiler.IL
 		ILInstruction DecodeCall(OpCode call)
 		{
 			var token = ReadMetadataToken(ref reader);
+			var methodRef = body.LookupToken(token);
 			// TODO: we need the decoded + (in case of generic calls) type substituted 
 			throw new NotImplementedException();
 		}
@@ -246,36 +330,30 @@ namespace ICSharpCode.Decompiler.IL
 
 		ILInstruction DecodeComparisonBranch(bool shortForm, OpCode comparisonOpCodeForInts, OpCode comparisonOpCodeForFloats, bool negate)
 		{
-			int start = reader.Offset - 1;
+			int start = reader.Position - 1;
 			var condition = DecodeComparison(comparisonOpCodeForInts, comparisonOpCodeForFloats);
 			int target = start + (shortForm ? reader.ReadSByte() : reader.ReadInt32());
-			condition.ILRange = new Interval(start, reader.Offset);
+			condition.ILRange = new Interval(start, reader.Position);
 			if (negate) {
-				condition = new LogicNotInstruction {
-					Operand = condition,
-					ILRange = condition.ILRange
-				};
+				condition = new LogicNotInstruction { Operand = condition };
 			}
 			return new ConditionalBranchInstruction(condition, target);
 		}
 
 		ILInstruction DecodeConditionalBranch(bool shortForm, bool negate)
 		{
-			int start = reader.Offset - 1;
+			int start = reader.Position - 1;
 			int target = start + (shortForm ? reader.ReadSByte() : reader.ReadInt32());
 			ILInstruction condition = ILInstruction.Pop;
 			if (negate) {
-				condition = new LogicNotInstruction {
-					Operand = condition,
-					ILRange = new Interval(start, reader.Offset)
-				};
+				condition = new LogicNotInstruction { Operand = condition };
 			}
 			return new ConditionalBranchInstruction(condition, target);
 		}
 
 		ILInstruction DecodeUnconditionalBranch(bool shortForm)
 		{
-			int start = reader.Offset - 1;
+			int start = reader.Position - 1;
 			int target = start + (shortForm ? reader.ReadSByte() : reader.ReadInt32());
 			return new BranchInstruction(OpCode.Branch, target);
 		}

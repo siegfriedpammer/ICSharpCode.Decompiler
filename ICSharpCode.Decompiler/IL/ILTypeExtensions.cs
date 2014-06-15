@@ -1,4 +1,4 @@
-﻿using ICSharpCode.Decompiler.Metadata;
+﻿using Mono.Cecil;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -10,7 +10,7 @@ namespace ICSharpCode.Decompiler.IL
 {
 	static class ILTypeExtensions
 	{
-		public static ImmutableArray<StackType> GetStackTypes(this TypeSignatureCollection typeSignatureCollection)
+		/*public static ImmutableArray<StackType> GetStackTypes(this TypeSignatureCollection typeSignatureCollection)
 		{
 			var result = new StackType[typeSignatureCollection.Count];
 			int i = 0;
@@ -18,38 +18,45 @@ namespace ICSharpCode.Decompiler.IL
 				result[i++] = GetStackType(typeSig);
 			}
 			return ImmutableArray.Create(result);
-		}
+		}*/
 
-		public static StackType GetStackType(this TypeSignature typeSig)
+		public static StackType GetStackType(this TypeReference typeRef)
 		{
-			return typeSig.SkipModifiers().TypeCode.GetStackType();
+			return typeRef.SkipModifiers().MetadataType.GetStackType();
         }
 
-		public static StackType GetStackType(this SignatureTypeCode typeCode)
+		public static TypeReference SkipModifiers(this TypeReference typeRef)
+		{
+			while (typeRef.IsOptionalModifier || typeRef.IsRequiredModifier)
+				typeRef = ((IModifierType)typeRef).ElementType;
+			return typeRef;
+		}
+
+		public static StackType GetStackType(this MetadataType typeCode)
 		{
 			switch (typeCode) {
-				case SignatureTypeCode.Boolean:
-				case SignatureTypeCode.Char:
-				case SignatureTypeCode.SByte:
-				case SignatureTypeCode.Byte:
-				case SignatureTypeCode.Int16:
-				case SignatureTypeCode.UInt16:
-				case SignatureTypeCode.Int32:
-				case SignatureTypeCode.UInt32:
+				case MetadataType.Boolean:
+				case MetadataType.Char:
+				case MetadataType.SByte:
+				case MetadataType.Byte:
+				case MetadataType.Int16:
+				case MetadataType.UInt16:
+				case MetadataType.Int32:
+				case MetadataType.UInt32:
 					return StackType.I4;
-				case SignatureTypeCode.Int64:
-				case SignatureTypeCode.UInt64:
+				case MetadataType.Int64:
+				case MetadataType.UInt64:
 					return StackType.I8;
-				case SignatureTypeCode.IntPtr:
-				case SignatureTypeCode.UIntPtr:
-				case SignatureTypeCode.Pointer:
+				case MetadataType.IntPtr:
+				case MetadataType.UIntPtr:
+				case MetadataType.Pointer:
 					return StackType.I;
-				case SignatureTypeCode.Single:
-				case SignatureTypeCode.Double:
+				case MetadataType.Single:
+				case MetadataType.Double:
 					return StackType.F;
-				case SignatureTypeCode.ByReference:
+				case MetadataType.ByReference:
 					return StackType.Ref;
-				case SignatureTypeCode.Void:
+				case MetadataType.Void:
 					return StackType.Void;
 				default:
 					return StackType.O;
@@ -58,7 +65,7 @@ namespace ICSharpCode.Decompiler.IL
 
 		public static StackType GetStackType(this PrimitiveType primitiveType)
 		{
-			return ((SignatureTypeCode)primitiveType).GetStackType();
+			return ((MetadataType)primitiveType).GetStackType();
 		}
 	}
 }

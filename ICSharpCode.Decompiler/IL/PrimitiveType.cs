@@ -1,4 +1,4 @@
-﻿using ICSharpCode.Decompiler.Metadata;
+﻿using Mono.Cecil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,18 +9,18 @@ namespace ICSharpCode.Decompiler.IL
 {
 	enum PrimitiveType : byte
 	{
-		None = SignatureTypeCode.Invalid,
-		I1 = SignatureTypeCode.SByte,
-		I2 = SignatureTypeCode.Int16,
-		I4 = SignatureTypeCode.Int32,
-		I8 = SignatureTypeCode.Int64,
-		R4 = SignatureTypeCode.Single,
-		R8 = SignatureTypeCode.Double,
-		U1 = SignatureTypeCode.Byte,
-		U2 = SignatureTypeCode.UInt16,
-		U4 = SignatureTypeCode.UInt32,
-		U8 = SignatureTypeCode.UInt64,
-		I = SignatureTypeCode.IntPtr,
-		U = SignatureTypeCode.UIntPtr,
+		None = 0,
+		I1 = MetadataType.SByte,
+		I2 = MetadataType.Int16,
+		I4 = MetadataType.Int32,
+		I8 = MetadataType.Int64,
+		R4 = MetadataType.Single,
+		R8 = MetadataType.Double,
+		U1 = MetadataType.Byte,
+		U2 = MetadataType.UInt16,
+		U4 = MetadataType.UInt32,
+		U8 = MetadataType.UInt64,
+		I = MetadataType.IntPtr,
+		U = MetadataType.UIntPtr,
 	}
 }

@@ -11,20 +11,20 @@ namespace ICSharpCode.Decompiler.IL
 	/// </summary>
 	enum StackType
 	{
-		Unknown = 0,
+		Unknown,
 		/// <summary>32-bit integer</summary>
-		I4 = 1,
+		I4,
 		/// <summary>64-bit integer</summary>
-		I8 = 2,
+		I8,
 		/// <summary>native-size integer</summary>
-		I = 3,
+		I,
 		/// <summary>Floating point number</summary>
-		F = 4,
+		F,
 		/// <summary>Another stack type. Includes objects, value types, function pointers, ...</summary>
-		O = 5,
+		O,
 		/// <summary>A managed pointer</summary>
-		Ref = 6,
+		Ref,
 		/// <summary>Represents the lack of a stack slot</summary>
-		Void = 7
+		Void
 	}
 }

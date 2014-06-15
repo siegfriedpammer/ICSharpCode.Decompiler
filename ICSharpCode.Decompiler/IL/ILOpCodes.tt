@@ -30,7 +30,7 @@ using System;
 #>
 namespace ICSharpCode.Decompiler.IL
 {
-	public enum ILOpCode : ushort
+	enum ILOpCode : ushort
 	{
 <#	foreach (var field in typeof(OpCodes).GetFields()) {
 		var opCode = (OpCode)field.GetValue(null);
@@ -41,7 +41,8 @@ namespace ICSharpCode.Decompiler.IL
 <#  } // end foreach #>
 	}
 
-	public static class ILOpCodeExtensions
+	/*
+	static class ILOpCodeExtensions
 	{
 		// We use a byte array instead of an enum array because it can be initialized more efficiently
 		static readonly byte[] operandTypes = { <#
@@ -56,4 +57,5 @@ namespace ICSharpCode.Decompiler.IL
 			return (OperandType)operandTypes[(ushort)opCode];
 		}
 	}
+	*/
 }

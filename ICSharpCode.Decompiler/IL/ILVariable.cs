@@ -14,5 +14,6 @@ namespace ICSharpCode.Decompiler.IL
 
 	class ILVariable(public readonly VariableKind Kind, public readonly int Index)
 	{
+		
 	}
 }

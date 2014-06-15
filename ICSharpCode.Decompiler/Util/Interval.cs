@@ -11,7 +11,7 @@ namespace ICSharpCode.Decompiler
 	/// Represents a half-open interval.
 	/// The start position is inclusive; but the end position is exclusive.
 	/// </summary>
-	public struct Interval
+	struct Interval
 	{
 		public static readonly Interval Empty = new Interval(0, 0);
 
@@ -48,7 +48,7 @@ namespace ICSharpCode.Decompiler
 	/// <summary>
 	/// An immutable set of integers, that is implemented as a list of intervals.
 	/// </summary>
-	public struct IntegerSet(public readonly ImmutableArray<Interval> Intervals)
+	struct IntegerSet(public readonly ImmutableArray<Interval> Intervals)
 	{
 		public bool IsEmpty
 		{
